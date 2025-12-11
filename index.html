@@ -1,0 +1,5435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Build Your Empire</title>
+  <style>
+    :root {
+      --bg-main: #050713;
+      --bg-panel: #090d1a;
+      --bg-panel-soft: #0b1021;
+      --accent: #39d2ff;
+      --accent-soft: rgba(57, 210, 255, 0.2);
+      --accent-warm: #ffb347;
+      --border-soft: #1a2238;
+      --text-main: #e5f2ff;
+      --text-muted: #8a98c2;
+      --danger: #ff4d6a;
+      --success: #3dff9c;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --shadow-soft: 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(1200px 800px at 50% 50%, #0a0f14 0%, #04070b 70%, #010308 100%);
+      color: var(--text-main);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* STARFIELD BACKGROUND (RANDOM) */
+    @keyframes twinkleStars {
+      0% { opacity: 0.2; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.15); }
+      100% { opacity: 0.3; transform: scale(1); }
+    }
+
+    .bg-stars {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .bg-star {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff, rgba(255, 255, 255, 0));
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+      animation-name: twinkleStars;
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 60px 1fr;
+    }
+
+    /* Status bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 20px;
+      background: linear-gradient(90deg, rgba(8, 12, 32, 0.9), rgba(10, 19, 45, 0.96));
+      border-bottom: 1px solid var(--border-soft);
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      position: relative;
+      z-index: 2;
+    }
+
+    .status-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .resource-pill {
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.3), rgba(7, 13, 40, 0.9));
+      border: 1px solid rgba(89, 146, 255, 0.45);
+      box-shadow: 0 0 12px rgba(57, 210, 255, 0.35);
+      min-width: 90px;
+    }
+
+    .resource-pill.crystal {
+      background: radial-gradient(circle at 0 0, rgba(174, 116, 255, 0.3), rgba(7, 13, 40, 0.9));
+      border-color: rgba(174, 116, 255, 0.5);
+      box-shadow: 0 0 12px rgba(174, 116, 255, 0.4);
+    }
+
+    .resource-pill.energy {
+      background: radial-gradient(circle at 0 0, rgba(255, 166, 77, 0.35), rgba(7, 13, 40, 0.9));
+      border-color: rgba(255, 193, 122, 0.5);
+      box-shadow: 0 0 12px rgba(255, 166, 77, 0.45);
+    }
+
+    .resource-label {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .resource-value {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-center {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(57, 210, 255, 0.6);
+    }
+
+    .status-right {
+      gap: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .status-tag {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(74, 148, 255, 0.45);
+      background: radial-gradient(circle at 20% 0, rgba(74, 148, 255, 0.55), rgba(4, 10, 28, 0.95));
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 9px;
+      color: #d8e5ff;
+    }
+
+    /* Main layout */
+    .main {
+      display: grid;
+      grid-template-columns: 210px minmax(0, 1fr) 260px;
+      height: 100%;
+      background: radial-gradient(circle at 50% 0%, rgba(57, 210, 255, 0.14), transparent 58%), #02030a;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      padding: 14px 10px;
+      background: linear-gradient(180deg, rgba(4, 8, 22, 0.98), rgba(5, 10, 25, 0.98));
+      border-right: 1px solid var(--border-soft);
+      box-shadow: 6px 0 24px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .logo {
+      padding: 4px 8px 12px;
+      border-bottom: 1px solid rgba(33, 45, 80, 0.7);
+      margin-bottom: 6px;
+    }
+
+    .logo-main {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #f4fbff;
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .nav-group-label {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 6px;
+      margin-bottom: 6px;
+    }
+
+    .nav-btn {
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 4px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.15), rgba(9, 13, 32, 0.95));
+      color: var(--text-main);
+      text-align: left;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      cursor: pointer;
+      transition: background 0.16s ease, transform 0.12s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .nav-btn span {
+      pointer-events: none;
+    }
+
+    .nav-btn .nav-label {
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .nav-btn .nav-hotkey {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .nav-btn:hover {
+      transform: translateX(3px);
+      border-color: rgba(57, 210, 255, 0.7);
+      box-shadow: 0 0 14px rgba(57, 210, 255, 0.45);
+    }
+
+    .nav-btn.active {
+      background: radial-gradient(circle at 0 0, rgba(255, 179, 71, 0.35), rgba(12, 15, 40, 0.98));
+      border-color: rgba(255, 179, 71, 0.9);
+      box-shadow: 0 0 16px rgba(255, 179, 71, 0.65);
+    }
+
+    .nav-btn.active .nav-label {
+      color: var(--accent-warm);
+    }
+
+    .nav-spacer {
+      flex: 1;
+    }
+
+    .nav-footer {
+      padding: 6px 6px 2px;
+      font-size: 10px;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(33, 45, 80, 0.7);
+    }
+
+    /* UNKNOWN REGIONS PANEL (IN SIDEBAR) */
+    .unknown-region {
+      margin: 8px 4px 0;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(2, 4, 12, 0.96), rgba(5, 12, 30, 0.98));
+      border: 1px dashed rgba(135, 153, 210, 0.9);
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.85);
+      font-size: 10px;
+    }
+
+    .unknown-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .unknown-text {
+      font-size: 10px;
+      color: #cfd9ff;
+      margin-bottom: 4px;
+    }
+
+    .unknown-sector {
+      margin-top: 6px;
+      padding: 6px 6px;
+      border-radius: 8px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.18), rgba(4, 7, 20, 0.98));
+      border: 1px solid rgba(90, 120, 190, 0.85);
+    }
+
+    .unknown-sector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      margin-bottom: 2px;
+    }
+
+    .unknown-sector-header .region-name {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e7f0ff;
+    }
+
+    .unknown-sector-header .region-cost {
+      color: var(--text-muted);
+    }
+
+    .unknown-sector-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+    }
+
+    /* Main content */
+    .content {
+      position: relative;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .view {
+      display: none;
+      flex: 1;
+      background: radial-gradient(circle at 50% 0%, rgba(57, 210, 255, 0.1), rgba(7, 10, 28, 0.98));
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(62, 85, 132, 0.8);
+      box-shadow: var(--shadow-soft);
+      padding: 14px 16px;
+      overflow: hidden;
+    }
+
+    .view.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .view-header {
+      font-size: 15px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #f4fbff;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .view-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .view-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      margin: 4px 0 4px;
+    }
+
+    .hint-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Galaxy view */
+    .galaxy-map-container {
+      position: relative;
+      flex: 1;
+      margin-top: 4px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(67, 100, 155, 0.9);
+      background:
+        radial-gradient(circle at 15% 20%, rgba(57, 210, 255, 0.32), transparent 55%),
+        radial-gradient(circle at 80% 70%, rgba(255, 179, 71, 0.22), transparent 55%),
+        radial-gradient(circle at 50% 120%, rgba(115, 92, 255, 0.3), transparent 60%),
+        #030615;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+    }
+
+    .galaxy-map {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .galaxy-content {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    .star {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 0%;
+      background:
+        radial-gradient(circle, #ffffff 0%, #ffe8bc 30%, #ffad51 55%, rgba(255, 173, 81, 0) 70%);
+      box-shadow:
+        0 0 18px rgba(255, 210, 120, 0.9),
+        0 0 32px rgba(255, 170, 90, 0.8),
+        0 0 70px rgba(57, 210, 255, 0.35);
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      transition: transform 0.16s ease, box-shadow 0.18s ease, filter 0.16s ease;
+    }
+
+    /* OWNED system = Earth image */
+    .star.player-owned {
+      width: 24px;
+      height: 24px;
+      background: none;
+      box-shadow:
+        0 0 20px rgba(57, 210, 255, 0.9),
+        0 0 40px rgba(57, 210, 255, 0.7),
+        0 0 70px rgba(57, 210, 255, 0.5);
+    }
+
+    .star.player-owned .earth-image {
+      width: 24px;
+      height: 24px;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+
+    /* Planet images for non-player systems */
+    .star:not(.player-owned) .earth-image {
+      width: 16px;
+      height: 16px;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .star::after {
+      content: "";
+      position: absolute;
+      inset: 40% -30%;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.48), transparent);
+      opacity: 0.7;
+      transform: skewX(25deg);
+      display: none; /* Removed flare effect from all planets */
+    }
+
+    .star:hover {
+      transform: translate(-50%, -50%) scale(1.2);
+      box-shadow:
+        0 0 24px rgba(255, 233, 180, 0.95),
+        0 0 45px rgba(255, 179, 71, 0.9),
+        0 0 80px rgba(57, 210, 255, 0.6);
+      filter: saturate(1.25);
+    }
+
+    .star.selected {
+      box-shadow:
+        0 0 30px rgba(255, 245, 210, 1),
+        0 0 60px rgba(255, 179, 71, 1),
+        0 0 90px rgba(57, 210, 255, 0.95);
+    }
+
+    /* ACTIVE owned system = blue */
+    .star.player-owned.selected {
+      background:
+        radial-gradient(circle, #ffffff 0%, #b7e2ff 30%, #3fa0ff 55%, rgba(63, 160, 255, 0) 70%);
+      box-shadow:
+        0 0 24px rgba(111, 220, 255, 0.95),
+        0 0 45px rgba(57, 210, 255, 0.9),
+        0 0 80px rgba(57, 210, 255, 0.85);
+    }
+
+    .star-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, 12px);
+      font-size: 9px;
+      color: rgba(227, 238, 255, 0.85);
+      text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .galaxy-overlay {
+      position: absolute;
+      width: 10000px;
+      height: 10000px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background-image:
+        radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.18) 0, transparent 50%),
+        radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.16) 0, transparent 50%),
+        radial-gradient(circle at 30% 80%, rgba(255, 255, 255, 0.14) 0, transparent 50%);
+      mix-blend-mode: screen;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .galaxy-grid {
+      position: absolute;
+      width: 10000px;
+      height: 10000px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background-image:
+        linear-gradient(rgba(71, 94, 148, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(71, 94, 148, 0.35) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .tooltip {
+      position: absolute;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.35), rgba(4, 9, 25, 0.98));
+      border: 1px solid rgba(104, 164, 255, 0.9);
+      font-size: 11px;
+      color: #e4f1ff;
+      pointer-events: none;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translate(-50%, -135%);
+      transition: opacity 0.12s ease;
+      z-index: 10;
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.8);
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+    }
+
+    .star-popup {
+      position: absolute;
+      min-width: 190px;
+      max-width: 230px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.4), rgba(5, 10, 26, 0.98));
+      border: 1px solid rgba(120, 178, 255, 0.95);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+      font-size: 11px;
+      color: #eaf3ff;
+      display: none;
+      z-index: 15;
+    }
+
+    .star-popup.visible {
+      display: block;
+    }
+
+    /* Location Axis Display */
+    .location-axis {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 8;
+    }
+
+    .axis-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .axis-lines {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+    }
+
+    .axis-h,
+    .axis-v {
+      position: absolute;
+      background: rgba(57, 210, 255, 0.15);
+      pointer-events: none;
+    }
+
+    .axis-h {
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 1px;
+      transform: translateY(-50%);
+    }
+
+    .axis-v {
+      left: 50%;
+      top: 0;
+      width: 1px;
+      height: 100%;
+      transform: translateX(-50%);
+    }
+
+    .location-info {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: rgba(5, 10, 26, 0.85);
+      border: 1px solid rgba(57, 210, 255, 0.5);
+      font-size: 11px;
+      color: var(--text-main);
+      font-family: 'Courier New', monospace;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+      z-index: 12;
+    }
+
+    .location-info-label {
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .location-info-value {
+      color: var(--text-muted);
+    }
+
+    .popup-header {
+      margin-bottom: 4px;
+    }
+
+    .popup-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .popup-subtitle {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .popup-planets {
+      margin-top: 4px;
+      max-height: 120px;
+      overflow-y: auto;
+      border-top: 1px solid rgba(80, 122, 200, 0.6);
+      border-bottom: 1px solid rgba(80, 122, 200, 0.6);
+      padding: 4px 0;
+    }
+
+    .popup-planet-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 3px 0;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .popup-planet-row:hover {
+      background: rgba(28, 88, 188, 0.5);
+    }
+
+    .popup-planet-name {
+      font-size: 11px;
+    }
+
+    .popup-planet-type {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .popup-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    /* Right side panel */
+    .side-panel {
+      padding: 12px 12px;
+      background: linear-gradient(180deg, rgba(6, 10, 24, 0.98), rgba(3, 5, 15, 0.98));
+      border-left: 1px solid var(--border-soft);
+      box-shadow: -6px 0 24px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .side-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .panel-block {
+      padding: 8px 9px;
+      border-radius: var(--radius-md);
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.18), rgba(6, 10, 26, 0.98));
+      border: 1px solid rgba(62, 94, 150, 0.9);
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.7);
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f5fbff;
+    }
+
+    .panel-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .panel-list {
+      list-style: none;
+      margin: 4px 0 0;
+      padding: 0;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .panel-list-item {
+      padding: 5px 6px;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      cursor: pointer;
+      color: #dde8ff;
+      transition: background 0.16s ease, border-color 0.16s ease, transform 0.1s ease;
+    }
+
+    .panel-list-item .name {
+      font-size: 11px;
+    }
+
+    .panel-list-item .tag {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(71, 120, 255, 0.25);
+      color: #d5e3ff;
+    }
+
+    .panel-list-item:hover {
+      background: rgba(57, 210, 255, 0.14);
+      border-color: rgba(57, 210, 255, 0.8);
+      transform: translateX(2px);
+    }
+
+    .panel-list-item.selected {
+      background: rgba(255, 179, 71, 0.2);
+      border-color: rgba(255, 179, 71, 0.8);
+    }
+
+    .panel-note {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stat-row strong {
+      color: #e7f2ff;
+    }
+
+    /* Planet view */
+    .planet-tabs {
+      display: inline-flex;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .planet-tab-btn {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(82, 134, 225, 0.5);
+      background: rgba(7, 10, 26, 0.96);
+      color: var(--text-muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .planet-tab-btn.active {
+      border-color: rgba(57, 210, 255, 0.9);
+      color: #eaf3ff;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.28), rgba(6, 11, 30, 0.98));
+    }
+
+    .planet-overview {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.16), rgba(9, 11, 30, 0.98));
+      border: 1px solid rgba(62, 94, 150, 0.85);
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    .planet-overview-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+    }
+
+    .value {
+      font-size: 12px;
+    }
+
+    .buildings-list {
+      margin-top: 6px;
+      padding: 6px 0 0;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .building-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) auto;
+      gap: 6px 10px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(3, 6, 18, 0.9);
+      border: 1px solid rgba(52, 78, 128, 0.9);
+      margin-bottom: 6px;
+      font-size: 11px;
+      align-items: center;
+    }
+
+    .building-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .building-name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .building-level {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .building-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+
+    .building-status {
+      grid-column: 1 / -1;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .building-status span {
+      color: var(--accent);
+    }
+
+    .building-status .danger {
+      color: var(--danger);
+    }
+
+    .building-status .success {
+      color: var(--success);
+    }
+
+    /* Fleet view */
+    .fleet-list {
+      margin-top: 6px;
+      flex: 1;
+      overflow-y: auto;
+      padding-top: 4px;
+    }
+
+    .fleet-row {
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(3, 6, 18, 0.9);
+      border: 1px solid rgba(52, 78, 128, 0.9);
+      margin-bottom: 6px;
+      font-size: 11px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) auto;
+      gap: 6px 10px;
+      align-items: center;
+    }
+
+    .row-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ship-name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .ship-qty {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .row-secondary {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .ship-amount-input {
+      width: 64px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(71, 101, 160, 0.9);
+      background: rgba(7, 11, 26, 0.97);
+      color: var(--text-main);
+      font-size: 11px;
+    }
+
+    /* Research view */
+    .research-list {
+      margin-top: 6px;
+      flex: 1;
+      overflow-y: auto;
+      padding-top: 4px;
+    }
+
+    .research-row {
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(3, 6, 18, 0.9);
+      border: 1px solid rgba(52, 78, 128, 0.9);
+      margin-bottom: 6px;
+      font-size: 11px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.4fr) auto;
+      gap: 6px 10px;
+      align-items: center;
+    }
+
+    .tech-name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tech-level {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .tech-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .tech-status {
+      grid-column: 1 / -1;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: -2px;
+    }
+
+    /* Empire view */
+    .empire-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .summary-card {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.12), rgba(7, 10, 28, 0.98));
+      border: 1px solid rgba(62, 94, 150, 0.85);
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 0 16px rgba(0, 0, 0, 0.8);
+    }
+
+    .summary-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: #f4fbff;
+    }
+
+    .summary-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .summary-note {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .alliance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 179, 71, 0.9);
+      background: radial-gradient(circle at 0 0, rgba(255, 179, 71, 0.35), rgba(16, 12, 4, 0.95));
+      font-size: 11px;
+      color: #fff4de;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(82, 134, 225, 0.9);
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.32), rgba(8, 13, 34, 0.98));
+      color: #e5f2ff;
+      font-size: 11px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      min-width: 72px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.16s ease, transform 0.1s ease, box-shadow 0.18s ease, border-color 0.18s ease, opacity 0.12s ease;
+    }
+
+    .btn.small {
+      padding: 4px 8px;
+      font-size: 10px;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 14px rgba(57, 210, 255, 0.65);
+      border-color: rgba(57, 210, 255, 1);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 0 10px rgba(57, 210, 255, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: default;
+      box-shadow: none;
+      border-color: rgba(92, 116, 164, 0.7);
+      background: rgba(11, 16, 35, 0.96);
+    }
+
+    /* Scrollbars */
+    .buildings-list::-webkit-scrollbar,
+    .fleet-list::-webkit-scrollbar,
+    .research-list::-webkit-scrollbar,
+    .panel-list::-webkit-scrollbar,
+    .popup-planets::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .buildings-list::-webkit-scrollbar-track,
+    .fleet-list::-webkit-scrollbar-track,
+    .research-list::-webkit-scrollbar-track,
+    .panel-list::-webkit-scrollbar-track,
+    .popup-planets::-webkit-scrollbar-track {
+      background: rgba(5, 8, 20, 0.96);
+    }
+
+    .buildings-list::-webkit-scrollbar-thumb,
+    .fleet-list::-webkit-scrollbar-thumb,
+    .research-list::-webkit-scrollbar-thumb,
+    .panel-list::-webkit-scrollbar-thumb,
+    .popup-planets::-webkit-scrollbar-thumb {
+      background: rgba(70, 110, 190, 0.9);
+      border-radius: 4px;
+    }
+
+    /* Utility */
+    .accent {
+      color: var(--accent);
+    }
+
+    .warm {
+      color: var(--accent-warm);
+    }
+
+    /* MAIN MENU STYLES */
+    .menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(1200px 800px at 50% 50%, #0a0f14 0%, #04070b 70%, #010308 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+    }
+
+    .menu-overlay.hidden {
+      display: none;
+    }
+
+    .menu-container {
+      text-align: center;
+      max-width: 600px;
+      padding: 40px;
+      border-radius: 20px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.15), rgba(9, 13, 32, 0.95));
+      border: 2px solid rgba(57, 210, 255, 0.8);
+      box-shadow: 
+        0 0 40px rgba(57, 210, 255, 0.6),
+        0 0 80px rgba(57, 210, 255, 0.3),
+        inset 0 0 30px rgba(57, 210, 255, 0.1);
+      animation: menuPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes menuPulse {
+      0%, 100% { box-shadow: 0 0 40px rgba(57, 210, 255, 0.6), 0 0 80px rgba(57, 210, 255, 0.3), inset 0 0 30px rgba(57, 210, 255, 0.1); }
+      50% { box-shadow: 0 0 60px rgba(57, 210, 255, 0.8), 0 0 100px rgba(57, 210, 255, 0.5), inset 0 0 40px rgba(57, 210, 255, 0.15); }
+    }
+
+    .menu-title {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffffff 0%, #39d2ff 50%, #ffb347 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0 0 10px 0;
+      text-shadow: 0 0 30px rgba(57, 210, 255, 0.8);
+      animation: titleGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes titleGlow {
+      0%, 100% { text-shadow: 0 0 20px rgba(57, 210, 255, 0.6), 0 0 40px rgba(255, 179, 71, 0.2); }
+      50% { text-shadow: 0 0 40px rgba(57, 210, 255, 0.9), 0 0 60px rgba(255, 179, 71, 0.4); }
+    }
+
+    .menu-subtitle {
+      font-size: 16px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 30px;
+      opacity: 0.9;
+    }
+
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 40px;
+    }
+
+    .menu-btn {
+      padding: 18px 40px;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border: 2px solid rgba(57, 210, 255, 0.9);
+      border-radius: 12px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.25), rgba(8, 13, 34, 0.98));
+      color: #e5f2ff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(57, 210, 255, 0.4);
+    }
+
+    .menu-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .menu-btn:hover {
+      border-color: rgba(57, 210, 255, 1);
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.4), rgba(8, 13, 34, 0.98));
+      transform: translateY(-3px);
+      box-shadow: 0 0 40px rgba(57, 210, 255, 0.8), 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .menu-btn:hover::before {
+      left: 100%;
+    }
+
+    .menu-btn:active {
+      transform: translateY(-1px);
+      box-shadow: 0 0 20px rgba(57, 210, 255, 0.5);
+    }
+
+    .menu-btn.exit-btn {
+      border-color: rgba(255, 77, 106, 0.7);
+      background: radial-gradient(circle at 0 0, rgba(255, 77, 106, 0.15), rgba(8, 13, 34, 0.98));
+      color: #ffb8c1;
+      box-shadow: 0 0 20px rgba(255, 77, 106, 0.3);
+    }
+
+    .menu-btn.exit-btn:hover {
+      border-color: rgba(255, 77, 106, 1);
+      background: radial-gradient(circle at 0 0, rgba(255, 77, 106, 0.3), rgba(8, 13, 34, 0.98));
+      box-shadow: 0 0 40px rgba(255, 77, 106, 0.6), 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .menu-footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .menu-stars {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Flying spaceship in main menu */
+    .menu-ship {
+      position: absolute;
+      left: -30%;
+      width: 120px;
+      height: auto;
+      pointer-events: none;
+      transform-origin: center;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.6));
+      opacity: 0;
+    }
+
+    @keyframes flyAcross {
+      0%   { left: -30%; opacity: 0; transform: translateY(0) rotate(-6deg) scale(0.9); }
+      8%   { opacity: 1; }
+      45%  { transform: translateY(-18px) rotate(4deg) scale(1); }
+      85%  { opacity: 1; }
+      100% { left: 130%; opacity: 0; transform: translateY(0) rotate(8deg) scale(0.95); }
+    }
+
+    @keyframes shipBob {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+      100% { transform: translateY(0); }
+    }
+
+    .menu-star-item {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #ffffff;
+      border-radius: 50%;
+      animation: starTwinkle 3s ease-in-out infinite;
+    }
+
+    @keyframes starTwinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    /* PAUSE MENU STYLES */
+    .pause-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      backdrop-filter: blur(8px);
+    }
+
+    .pause-overlay.active {
+      display: flex;
+    }
+
+    /* Main menu settings modal - always on top */
+    #mainMenuSettingsModal {
+      z-index: 10000 !important;
+    }
+
+    .pause-container {
+      text-align: center;
+      max-width: 450px;
+      padding: 40px;
+      border-radius: 16px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.2), rgba(9, 13, 32, 0.98));
+      border: 2px solid rgba(57, 210, 255, 0.9);
+      box-shadow: 
+        0 0 40px rgba(57, 210, 255, 0.6),
+        0 0 80px rgba(57, 210, 255, 0.3);
+      animation: pausePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pausePulse {
+      0%, 100% { box-shadow: 0 0 40px rgba(57, 210, 255, 0.6), 0 0 80px rgba(57, 210, 255, 0.3); }
+      50% { box-shadow: 0 0 60px rgba(57, 210, 255, 0.8), 0 0 100px rgba(57, 210, 255, 0.5); }
+    }
+
+    .pause-title {
+      font-size: 40px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 30px 0;
+      text-shadow: 0 0 20px rgba(57, 210, 255, 0.8);
+    }
+
+    .pause-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .pause-btn {
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 2px solid rgba(57, 210, 255, 0.8);
+      border-radius: 10px;
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.2), rgba(8, 13, 34, 0.98));
+      color: #e5f2ff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 15px rgba(57, 210, 255, 0.3);
+    }
+
+    .pause-btn:hover {
+      border-color: rgba(57, 210, 255, 1);
+      background: radial-gradient(circle at 0 0, rgba(57, 210, 255, 0.35), rgba(8, 13, 34, 0.98));
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(57, 210, 255, 0.7);
+    }
+
+    .pause-btn:active {
+      transform: translateY(0);
+    }
+
+    .pause-btn.quit-btn {
+      border-color: rgba(255, 77, 106, 0.7);
+      background: radial-gradient(circle at 0 0, rgba(255, 77, 106, 0.15), rgba(8, 13, 34, 0.98));
+      color: #ffb8c1;
+      box-shadow: 0 0 15px rgba(255, 77, 106, 0.3);
+    }
+
+    .pause-btn.quit-btn:hover {
+      border-color: rgba(255, 77, 106, 1);
+      background: radial-gradient(circle at 0 0, rgba(255, 77, 106, 0.3), rgba(8, 13, 34, 0.98));
+      box-shadow: 0 0 30px rgba(255, 77, 106, 0.6);
+    }
+
+    .pause-hint {
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+  </style>
+</head>
+<body>
+<div id="bgStars" class="bg-stars"></div>
+
+<!-- Audio unlock overlay + styles -->
+<style>
+  .audio-unlock { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index:9999; background: rgba(0,0,0,0.65); }
+  .audio-unlock .panel { background: linear-gradient(180deg,#071025,#02101a); padding: 28px; border-radius: 12px; text-align:center; color: #e6f6ff; box-shadow: 0 10px 40px rgba(0,0,0,0.7); }
+  .audio-unlock .panel h2 { margin:0 0 8px; font-size:20px; }
+  .audio-unlock .panel p { margin:0 0 14px; color: #bcd8ff; font-size:13px; }
+  .audio-unlock .panel button { background: #39d2ff; border: none; color:#02202a; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; }
+  .audio-unlock.hidden { display:none; }
+</style>
+
+<div id="audioUnlock" class="audio-unlock hidden">
+  <div class="panel">
+    <h2>Enable Audio</h2>
+    <p>Your browser requires a user interaction to allow audio playback. Click to enable background music.</p>
+    <div>
+      <button id="audioUnlockBtn">Enable audio &amp; continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN MENU -->
+<div id="mainMenu" class="menu-overlay">
+  <div class="menu-stars"></div>
+  <div class="menu-container">
+    <h1 class="menu-title">NOVA CORE</h1>
+    <p class="menu-subtitle">Build Your Empire in the Stars</p>
+    
+    <div class="menu-buttons">
+      <button class="menu-btn" id="newGameBtn">New Game</button>
+      <button class="menu-btn" id="loadGameBtn">Load Game</button>
+      <button class="menu-btn" id="settingsBtn">Settings</button>
+      <button class="menu-btn exit-btn" id="exitGameBtn">Exit Game</button>
+    </div>
+    
+    <div class="menu-footer">
+      © 2025 NOVA COLLECTIVE • Explore. Conquer. Dominate.
+    </div>
+  </div>
+</div>
+
+<!-- ATTACK FLEET MODAL -->
+<div id="attackFleetModal" class="pause-overlay">
+  <div class="pause-container" style="max-width: 500px;">
+    <h2 class="pause-title">Launch Attack</h2>
+    <div id="attackFleetContent" style="padding: 20px 0; text-align: left;">
+      <!-- Dynamic content goes here -->
+    </div>
+    <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
+      <button class="pause-btn" id="confirmAttackBtn">Launch Attack</button>
+      <button class="pause-btn" id="cancelAttackBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE / LOAD SLOTS MODAL -->
+<div id="saveLoadModal" class="pause-overlay">
+  <div class="pause-container">
+    <h2 class="pause-title">Save / Load Slots</h2>
+    <div id="saveSlotsList" style="width:420px; max-height:320px; overflow:auto; text-align:left;"></div>
+    <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
+      <button class="pause-btn" id="closeSaveLoadBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="mainMenuSettingsModal" class="pause-overlay">
+  <div class="pause-container" style="max-width: 400px;">
+    <h2 class="pause-title">SETTINGS</h2>
+    
+    <div style="padding: 20px 0;">
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; color: #e6f6ff; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em;">🔊 Master Volume</label>
+        <input id="mainMenuVolumeSlider" type="range" min="0" max="100" value="70" style="width: 100%; height: 8px; cursor: pointer; accent-color: #39d2ff;">
+        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #8a98c2;">
+          <span>0%</span>
+          <span id="mainMenuVolumePercent">70%</span>
+          <span>100%</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="pause-buttons">
+      <button class="pause-btn" id="closeMainMenuSettingsBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAUSE MENU -->
+<div id="pauseMenu" class="pause-overlay">
+  <div class="pause-container">
+    <h2 class="pause-title">PAUSED</h2>
+    
+    <div class="pause-buttons">
+      <button class="pause-btn" id="resumeBtn">Resume</button>
+      <button class="pause-btn" id="pauseSettingsBtn">Settings</button>
+      <button class="pause-btn quit-btn" id="quitBtn">Quit Game</button>
+    </div>
+    
+    <div class="pause-hint">
+      Press ESC to resume
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="pause-overlay">
+  <div class="pause-container" style="max-width: 400px;">
+    <h2 class="pause-title">SETTINGS</h2>
+    
+    <div style="padding: 20px 0;">
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; color: #e6f6ff; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em;">🔊 Master Volume</label>
+        <input id="volumeSlider" type="range" min="0" max="100" value="70" style="width: 100%; height: 8px; cursor: pointer; accent-color: #39d2ff;">
+        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #8a98c2;">
+          <span>0%</span>
+          <span id="volumePercent">70%</span>
+          <span>100%</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="pause-buttons">
+      <button class="pause-btn" id="closeSettingsBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Top status bar -->
+  <header class="status-bar">
+    <div class="status-group">
+      <div class="resource-pill">
+        <span class="resource-label">Metal</span>
+        <span class="resource-value" id="metalValue">0</span>
+      </div>
+      <div class="resource-pill crystal">
+        <span class="resource-label">Crystal</span>
+        <span class="resource-value" id="crystalValue">0</span>
+      </div>
+      <div class="resource-pill energy">
+        <span class="resource-label">Energy</span>
+        <span class="resource-value" id="energyValue">0</span>
+      </div>
+    </div>
+
+    <div class="status-center" id="currentPlanetLabel">
+      No Planet Selected
+    </div>
+
+    <div class="status-group status-right">
+      <span id="gameTimeLabel">Cycle 001 • 00:00</span>
+      <span class="status-tag">Build Your Empire</span>
+      <button id="audioToggleBtn" class="status-tag" title="Toggle music">🔊</button>
+    </div>
+  </header>
+
+  <!-- Main layout -->
+  <div class="main">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-main">NOVA CORE</div>
+        <div class="logo-sub">Space Empire Interface</div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Navigation</div>
+        <button class="nav-btn active" data-view="galaxy">
+          <span class="nav-label">Galaxy</span>
+          <span class="nav-hotkey">[1]</span>
+        </button>
+        <button class="nav-btn" data-view="planet">
+          <span class="nav-label">Planet</span>
+          <span class="nav-hotkey">[2]</span>
+        </button>
+        <button class="nav-btn" data-view="fleet">
+          <span class="nav-label">Fleet</span>
+          <span class="nav-hotkey">[3]</span>
+        </button>
+        <button class="nav-btn" data-view="research">
+          <span class="nav-label">Research</span>
+          <span class="nav-hotkey">[4]</span>
+        </button>
+        <button class="nav-btn" data-view="empire">
+          <span class="nav-label">Empire</span>
+          <span class="nav-hotkey">[5]</span>
+        </button>
+        <button class="nav-btn" id="toggleUnknownBtn">
+          <span class="nav-label">Unknown Regions: On</span>
+        </button>
+      </div>
+
+      <!-- UNKNOWN REGIONS PANEL -->
+      <div id="unknownRegion" class="unknown-region">
+        <div class="unknown-title">Unknown Regions</div>
+        <div class="unknown-text">
+          Recon probes from your active planet can scan beyond the charted map and reveal hidden star systems.
+        </div>
+
+        <div class="unknown-sector" data-region="rim">
+          <div class="unknown-sector-header">
+            <span class="region-name">Outer Rim</span>
+            <span class="region-cost">3 Recon</span>
+          </div>
+          <div class="unknown-sector-body">
+            <span>Hidden: <span class="unknown-count" data-region-count="rim">0</span></span>
+            <button class="btn small unknown-explore-btn" data-region="rim">Explore</button>
+          </div>
+        </div>
+
+        <div class="unknown-sector" data-region="void">
+          <div class="unknown-sector-header">
+            <span class="region-name">Deep Void</span>
+            <span class="region-cost">5 Recon</span>
+          </div>
+          <div class="unknown-sector-body">
+            <span>Hidden: <span class="unknown-count" data-region-count="void">0</span></span>
+            <button class="btn small unknown-explore-btn" data-region="void">Explore</button>
+          </div>
+        </div>
+
+        <div class="unknown-sector" data-region="expanse">
+          <div class="unknown-sector-header">
+            <span class="region-name">Far Expanse</span>
+            <span class="region-cost">7 Recon</span>
+          </div>
+          <div class="unknown-sector-body">
+            <span>Hidden: <span class="unknown-count" data-region-count="expanse">0</span></span>
+            <button class="btn small unknown-explore-btn" data-region="expanse">Explore</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEFENSE FORCES PANEL -->
+      <div id="defensePanel" class="unknown-region">
+        <div class="unknown-title">Defense Forces</div>
+        <div id="defensePanelBody" class="unknown-text">
+          No planet selected.
+        </div>
+      </div>
+
+      <div class="nav-spacer"></div>
+
+      <div class="nav-footer">
+        Drag to pan. Scroll to zoom. Click a star to inspect or attack. Recon units are per-planet and launch from your active world.
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <section class="content">
+      <!-- Galaxy View -->
+      <div id="view-galaxy" class="view active">
+        <div class="view-header">
+          <div>GALAXY OVERVIEW</div>
+          <div class="view-subtitle">
+            Drag to move • Hover for info • Click a star • WASD / arrows to pan • Scroll to zoom
+          </div>
+        </div>
+        <div class="view-body">
+          <div class="galaxy-map-container">
+            <div id="galaxyMap" class="galaxy-map">
+              <div id="galaxyContent" class="galaxy-content">
+                <div class="galaxy-grid"></div>
+                <div class="galaxy-overlay"></div>
+                <!-- stars injected by JS -->
+                <div id="starPopup" class="star-popup"></div>
+              </div>
+              <div id="galaxyTooltip" class="tooltip"></div>
+              <div id="locationDisplay" class="location-info" style="position:absolute;bottom:15px;right:15px;z-index:12;">
+                <span class="location-info-label">Location</span><br>
+                <span class="location-info-value" id="locationXY">X: 0, Y: 0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Planet View -->
+      <div id="view-planet" class="view">
+        <div class="view-header">
+          <div>PLANET MANAGEMENT</div>
+          <div class="view-subtitle" id="planetHeaderSubtitle">
+            Start from your homeworld, conquer or colonize others, then use the panel to navigate between your worlds.
+          </div>
+        </div>
+        <div class="view-body">
+          <div class="planet-tabs">
+            <button class="planet-tab-btn active" data-planet-tab="surface">Surface</button>
+            <button class="planet-tab-btn" data-planet-tab="fleet">Fleet</button>
+            <button class="planet-tab-btn" data-planet-tab="research">Research</button>
+          </div>
+
+          <!-- Surface / buildings -->
+          <div id="planetSurfaceSection">
+            <div class="planet-overview">
+              <div class="planet-overview-item">
+                <span class="label">Name</span>
+                <span class="value" id="planetName">—</span>
+                <button class="btn small" id="renamePlanetBtn" style="margin-top:4px;">Rename</button>
+              </div>
+              <div class="planet-overview-item">
+                <span class="label">Type</span>
+                <span class="value" id="planetType">—</span>
+              </div>
+              <div class="planet-overview-item">
+                <span class="label">Population</span>
+                <span class="value" id="planetPopulation">—</span>
+              </div>
+            </div>
+
+            <div class="section-title">Buildings</div>
+            <div id="buildingsList" class="buildings-list"></div>
+            <div class="hint-text">
+              Upgrading buildings increases this planet's local resource production. Each colony has its own buildings and storage.
+            </div>
+          </div>
+
+          <!-- Planet Fleet -->
+          <div id="planetFleetSection" style="display:none;">
+            <div class="section-title">Local Fleet</div>
+            <div id="planetFleetList" class="fleet-list"></div>
+            <div class="hint-text">
+              Ships built on this planet belong to this planet's fleet. Empire totals are just a summary.
+            </div>
+          </div>
+
+          <!-- Planet Research -->
+          <div id="planetResearchSection" style="display:none;">
+            <div class="section-title">Local Research</div>
+            <div id="planetResearchSummary" class="panel-block" style="padding:8px 9px;"></div>
+            <div class="hint-text">
+              Research is empire-wide. Levels apply to every colony. Use the main Research view for full control.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fleet View -->
+      <div id="view-fleet" class="view">
+        <div class="view-header">
+          <div>FLEET COMMAND</div>
+          <div class="view-subtitle">
+            Build ships with this planet's Metal and Crystal. Attacks, scans, and exploration consume ships from the active planet only.
+          </div>
+        </div>
+        <div class="view-body">
+          <div class="section-title">Empire Fleets</div>
+          <div id="fleetList" class="fleet-list"></div>
+          <div class="hint-text" id="fleetHint">
+            Building ships consumes resources from the active planet and adds units to that world’s local fleet.
+          </div>
+        </div>
+      </div>
+
+      <!-- Research View -->
+      <div id="view-research" class="view">
+        <div class="view-header">
+          <div>RESEARCH LAB</div>
+          <div class="view-subtitle">
+            Unlock technologies to boost income, fleet power, and exploration efficiency.
+          </div>
+        </div>
+        <div class="view-body">
+          <div class="section-title">Technologies</div>
+          <div id="researchList" class="research-list"></div>
+          <div class="hint-text">
+            Only one level of a tech is researched at a time. Effects are applied automatically when the timer finishes.
+          </div>
+        </div>
+      </div>
+
+      <!-- Empire View -->
+      <div id="view-empire" class="view">
+        <div class="view-header">
+          <div>EMPIRE OVERVIEW</div>
+          <div class="view-subtitle">
+            High-level summary of your space empire.
+          </div>
+        </div>
+        <div class="view-body">
+          <div class="section-title">Alliance</div>
+          <div class="alliance-badge" id="allianceName">
+            NOVA COLLECTIVE
+          </div>
+
+          <div class="section-title">Metrics</div>
+          <div class="empire-grid">
+            <div class="summary-card">
+              <div class="summary-title">Colonized Planets</div>
+              <div class="summary-value" id="empirePlanets">0</div>
+              <div class="summary-note">Worlds currently under your control.</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-title">Total Fleet</div>
+              <div class="summary-value" id="empireFleets">0</div>
+              <div class="summary-note">Sum of all per-planet fleets.</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-title">Stored Resources</div>
+              <div class="summary-value" id="empireResources">0</div>
+              <div class="summary-note">Sum of Metal, Crystal, and Energy across all colonies.</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-title">Combat Efficiency</div>
+              <div class="summary-value" id="empireAttackMultiplier">x1.00</div>
+              <div class="summary-note">Boosted by Weapon Tech and fleet size.</div>
+            </div>
+          </div>
+
+          <div class="hint-text">
+            Empire stats update in real time as you build, research, conquer, colonize, explore, and scan hostile worlds.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right panel -->
+    <aside class="side-panel">
+      <div class="side-title">Owned Planets</div>
+      <div id="sidePanelContent">
+        <!-- Filled by JS -->
+      </div>
+
+      <div class="side-title" style="margin-top: 6px;">Quick Stats</div>
+      <div class="panel-block" id="quickStatsPanel">
+        <div class="stat-row">
+          <span>Metal /s (Empire)</span>
+          <strong id="rateMetal">0</strong>
+        </div>
+        <div class="stat-row">
+          <span>Crystal /s (Empire)</span>
+          <strong id="rateCrystal">0</strong>
+        </div>
+        <div class="stat-row">
+          <span>Energy /s (Empire)</span>
+          <strong id="rateEnergy">0</strong>
+        </div>
+        <div class="stat-row">
+          <span>Fleet Attack</span>
+          <strong id="quickAttackMultiplier">x1.00</strong>
+        </div>
+        <div class="panel-note">
+          Income and bonuses are affected by Buildings, Research, colonized worlds, and exploration.
+        </div>
+      </div>
+
+      <button id="intelMessageBtn" style="width: 100%; margin-top: 6px; background: rgba(57, 210, 255, 0.15); border: 1px solid rgba(57, 210, 255, 0.4); border-radius: 6px; padding: 8px 12px; color: #39d2ff; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; position: relative;" onmouseover="this.style.background='rgba(57, 210, 255, 0.25)'" onmouseout="this.style.background='rgba(57, 210, 255, 0.15)'">
+        📩 Messages
+        <span id="messageIndicator" style="display: none; position: absolute; top: 4px; right: 8px; background: #ff4d6a; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; font-weight: bold; line-height: 18px; text-align: center;">!</span>
+      </button>
+      
+      <!-- Message Storage Modal -->
+      <div id="messageStorageModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+          <div style="margin-bottom: 16px;">
+            <h2 style="margin: 0; color: var(--accent);">Message Storage</h2>
+          </div>
+          <div id="messageStorageContent" style="max-height: 400px; overflow-y: auto;">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+
+    /* -------------------------------------------------------------
+       GAME CONFIGURATION
+       ------------------------------------------------------------- */
+
+    var BASE_KNOWN_SYSTEMS = 250;
+
+    var UNKNOWN_REGION_CONFIG = {
+      // Wider, valid coverage areas (percent coordinates). Keep min <= max.
+      rim: {
+        label: "Outer Rim",
+        reconCost: 3,
+        // Very wide extents to allow discoveries far outside initial view
+        minX: -300,
+        maxX: 300,
+        minY: -300,
+        maxY: 300
+      },
+      void: {
+        label: "Deep Void",
+        reconCost: 5,
+        // Covers a broad swath beyond main map
+        minX: -700,
+        maxX: 700,
+        minY: -700,
+        maxY: 700
+      },
+      expanse: {
+        label: "Far Expanse",
+        reconCost: 7,
+        // Extremely wide for the farthest unknowns
+        minX: -1200,
+        maxX: 1200,
+        minY: -1200,
+        maxY: 1200
+      }
+    };
+
+    var UNKNOWN_COUNTS = {
+      rim: 10,
+      void: 10,
+      expanse: 10
+    };
+
+    var buildingConfigs = {
+      metalMine: {
+        id: "metalMine",
+        displayName: "Metal Mine",
+        baseCost: { metal: 60, crystal: 20, energy: 5 },
+        costMultiplier: 1.6,
+        baseTime: 4,
+        productionBonusPerLevel: { metal: 3 }
+      },
+      solarPlant: {
+        id: "solarPlant",
+        displayName: "Solar Plant",
+        baseCost: { metal: 50, crystal: 30, energy: 0 },
+        costMultiplier: 1.55,
+        baseTime: 4,
+        productionBonusPerLevel: { energy: 3 }
+      },
+      shipyard: {
+        id: "shipyard",
+        displayName: "Shipyard",
+        baseCost: { metal: 100, crystal: 60, energy: 20 },
+        costMultiplier: 1.7,
+        baseTime: 6,
+        productionBonusPerLevel: { crystal: 1 }
+      },
+      defenseGrid: {
+        id: "defenseGrid",
+        displayName: "Defense Grid",
+        baseCost: { metal: 120, crystal: 60, energy: 30 },
+        costMultiplier: 1.7,
+        baseTime: 6,
+        productionBonusPerLevel: {}
+      }
+    };
+
+    var shipConfigs = {
+      scoutHawk: {
+        id: "scoutHawk",
+        displayName: "Scout Hawk (Recon)",
+        baseAtk: 10,
+        baseShd: 20,
+        powers: [
+          { name: "Focused Burst", effect: function(stats) { return { atk: stats.atk * 2, shd: stats.shd }; } },
+          { name: "Shield Ping", effect: function(stats) { return { atk: stats.atk, shd: stats.shd + 10 }; } }
+        ],
+        cost: { metal: 15, crystal: 5, energy: 2 }
+      },
+      swiftFang: {
+        id: "swiftFang",
+        displayName: "Swift Fang (Interceptor)",
+        baseAtk: 15,
+        baseShd: 15,
+        powers: [
+          { name: "Attack Rush", effect: function(stats) { return { atk: stats.atk * 1.5, shd: stats.shd }; } },
+          { name: "Light Barrier", effect: function(stats) { return { atk: stats.atk, shd: stats.shd + 5 }; } }
+        ],
+        cost: { metal: 25, crystal: 10, energy: 3 }
+      },
+      blazeWing: {
+        id: "blazeWing",
+        displayName: "Blaze Wing (Fighter)",
+        baseAtk: 25,
+        baseShd: 10,
+        powers: [
+          { name: "Overcharge", effect: function(stats) { return { atk: stats.atk * 2.5, shd: stats.shd }; } },
+          { name: "Flare Shield", effect: function(stats) { return { atk: stats.atk, shd: stats.shd + 8 }; } }
+        ],
+        cost: { metal: 35, crystal: 15, energy: 5 }
+      },
+      ironShell: {
+        id: "ironShell",
+        displayName: "Iron Shell (Tank)",
+        baseAtk: 18,
+        baseShd: 40,
+        powers: [
+          { name: "Armor Lock", effect: function(stats) { return { atk: stats.atk, shd: stats.shd * 2 }; } },
+          { name: "Heavy Strike", effect: function(stats) { return { atk: stats.atk + 10, shd: stats.shd }; } }
+        ],
+        cost: { metal: 50, crystal: 25, energy: 8 }
+      },
+      shieldHarbor: {
+        id: "shieldHarbor",
+        displayName: "Shield Harbor (Support)",
+        baseAtk: 8,
+        baseShd: 35,
+        powers: [
+          { name: "Shield Wave", effect: function(stats) { return { atk: stats.atk, shd: stats.shd + 20 }; } },
+          { name: "Shielded Shot", effect: function(stats) { return { atk: stats.atk + (0.2 * stats.shd), shd: stats.shd }; } }
+        ],
+        cost: { metal: 40, crystal: 30, energy: 6 }
+      },
+      droneHive: {
+        id: "droneHive",
+        displayName: "Drone Hive (Carrier)",
+        baseAtk: 20,
+        baseShd: 25,
+        powers: [
+          { name: "Drone Volley", effect: function(stats) { return { atk: stats.atk + 15, shd: stats.shd }; } },
+          { name: "Drone Screen", effect: function(stats) { return { atk: stats.atk, shd: stats.shd + 12 }; } }
+        ],
+        cost: { metal: 60, crystal: 35, energy: 10 }
+      },
+      starMule: {
+        id: "starMule",
+        displayName: "Star Mule (Cargo)",
+        baseAtk: 5,
+        baseShd: 30,
+        powers: [
+          { name: "Defensive Guns", effect: function(stats) { return { atk: stats.atk + 8, shd: stats.shd }; } },
+          { name: "Reinforced Plating", effect: function(stats) { return { atk: stats.atk, shd: stats.shd * 1.5 }; } }
+        ],
+        cost: { metal: 30, crystal: 10, energy: 4 }
+      },
+      rockDigger: {
+        id: "rockDigger",
+        displayName: "Rock Digger (Miner)",
+        baseAtk: 12,
+        baseShd: 22,
+        powers: [
+          { name: "Drill Cannon", effect: function(stats) { return { atk: stats.atk * 1.8, shd: stats.shd }; } },
+          { name: "Dust Shield", effect: function(stats) { return { atk: stats.atk, shd: stats.shd + 6 }; } }
+        ],
+        cost: { metal: 28, crystal: 12, energy: 3 }
+      },
+      ghostVeil: {
+        id: "ghostVeil",
+        displayName: "Ghost Veil (Stealth)",
+        baseAtk: 22,
+        baseShd: 18,
+        powers: [
+          { name: "Ambush Strike", effect: function(stats) { return { atk: stats.atk * 2.2, shd: stats.shd }; } },
+          { name: "Phase Shield", effect: function(stats) { return { atk: stats.atk, shd: stats.shd * 1.4 }; } }
+        ],
+        cost: { metal: 45, crystal: 25, energy: 7 }
+      },
+      planetBreaker: {
+        id: "planetBreaker",
+        displayName: "Planet Breaker (Siege)",
+        baseAtk: 40,
+        baseShd: 28,
+        powers: [
+          { name: "Siege Beam", effect: function(stats) { return { atk: stats.atk * 3, shd: stats.shd }; } },
+          { name: "Fortress Screen", effect: function(stats) { return { atk: stats.atk, shd: stats.shd + 25 }; } }
+        ],
+        cost: { metal: 100, crystal: 60, energy: 15 }
+      }
+    };
+
+    var researchConfigs = {
+      energyTech: {
+        id: "energyTech",
+        displayName: "Energy Tech",
+        baseCost: { metal: 120, crystal: 90, energy: 0 },
+        baseTime: 8,
+        description: "+10% Metal, +5% Crystal, +15% Energy production per level."
+      },
+      weaponTech: {
+        id: "weaponTech",
+        displayName: "Weapon Tech",
+        baseCost: { metal: 150, crystal: 80, energy: 30 },
+        baseTime: 10,
+        description: "+5% Fleet attack per level (combat ships only)."
+      }
+    };
+
+    // Helper function to create empty fleet object
+    function createEmptyFleet() {
+      return {
+        scoutHawk: 0,
+        swiftFang: 0,
+        blazeWing: 0,
+        ironShell: 0,
+        shieldHarbor: 0,
+        droneHive: 0,
+        starMule: 0,
+        rockDigger: 0,
+        ghostVeil: 0,
+        planetBreaker: 0
+      };
+    }
+
+    var gameState = {
+      time: 0,
+      baseRates: {
+        metal: 2,
+        crystal: 1,
+        energy: 1
+      },
+      empireRates: {
+        metal: 0,
+        crystal: 0,
+        energy: 0
+      },
+      systems: [],
+      selectedSystemId: null,
+      selectedPlanetId: null,
+      // summary of fleets across all planets (kept in sync from local fleets)
+      fleets: {
+        scoutHawk: 0,
+        swiftFang: 0,
+        blazeWing: 0,
+        ironShell: 0,
+        shieldHarbor: 0,
+        droneHive: 0,
+        starMule: 0,
+        rockDigger: 0,
+        ghostVeil: 0,
+        planetBreaker: 0
+      },
+      research: {
+        energyTech: { level: 0, isResearching: false, finishAt: 0 },
+        weaponTech: { level: 0, isResearching: false, finishAt: 0 }
+      },
+      attackMultiplier: 1.0,
+      log: []
+    };
+
+    var currentView = "galaxy";
+    var lastTickTime = Date.now();
+
+    /* DOM refs */
+    var galaxyMapEl, galaxyContentEl, tooltipEl, starPopupEl, sidePanelContentEl;
+    var metalEl, crystalEl, energyEl, planetLabelEl, timeEl;
+    var rateMetalEl, rateCrystalEl, rateEnergyEl, attackMultiplierQuickEl;
+    var buildingsListEl, fleetListEl, researchListEl;
+    var planetNameEl, planetTypeEl, planetPopulationEl, planetHeaderSubtitleEl;
+    var allianceNameEl, empirePlanetsEl, empireFleetsEl, empireResourcesEl, empireAttackMultEl;
+    var fleetHintEl;
+    var renamePlanetBtnEl;
+    var bgStarsEl;
+    var unknownRegionEl, toggleUnknownBtnEl;
+    var planetFleetListEl, planetResearchSummaryEl;
+    var defensePanelEl, defensePanelBodyEl;
+    var intelLogPanelEl;
+
+    /* Galaxy camera + zoom */
+    var galaxyCamera = { x: 0, y: 0 };
+    var isPanning = false;
+    var panStartX = 0;
+    var panStartY = 0;
+    var panStartCameraX = 0;
+    var panStartCameraY = 0;
+
+    var galaxyZoom = 1;
+    var MIN_ZOOM = 0.5;
+    var MAX_ZOOM = 2.0;
+
+    /* Unknown UI visibility */
+    var unknownVisible = true;
+
+    var gameStarted = false;
+    var gameLoopIntervalId = null;
+
+    document.addEventListener("DOMContentLoaded", function () {
+      initMainMenu();
+    });
+
+    function initMainMenu() {
+      var newGameBtn = document.getElementById("newGameBtn");
+      var loadGameBtn = document.getElementById("loadGameBtn");
+      var settingsBtn = document.getElementById("settingsBtn");
+      var exitGameBtn = document.getElementById("exitGameBtn");
+      var mainMenu = document.getElementById("mainMenu");
+      var menuStars = document.querySelector(".menu-stars");
+
+           // Start menu music
+      try {
+        setTimeout(function() {
+          if (window.audioManager && !document.getElementById('mainMenu').classList.contains('hidden')) {
+            window.audioManager.playMenu();
+          }
+        }, 200);
+      } catch (e) { console.warn('Menu audio error', e); }
+
+
+      // Generate menu background stars
+      if (menuStars) {
+        generateMenuStars(menuStars);
+      }
+
+      // Button event listeners
+      if (newGameBtn) {
+        newGameBtn.addEventListener("click", startNewGame);
+      }
+      if (loadGameBtn) {
+        loadGameBtn.addEventListener("click", loadGame);
+      }
+      if (settingsBtn) {
+        settingsBtn.addEventListener("click", openSettings);
+      }
+      if (exitGameBtn) {
+        exitGameBtn.addEventListener("click", exitGame);
+      }
+
+      // Initialize main menu settings modal
+      initMainMenuSettings();
+    }
+
+    function initMainMenuSettings() {
+      var volumeSlider = document.getElementById('mainMenuVolumeSlider');
+      var volumePercent = document.getElementById('mainMenuVolumePercent');
+      var closeSettingsBtn = document.getElementById('closeMainMenuSettingsBtn');
+      var settingsModal = document.getElementById('mainMenuSettingsModal');
+
+      if (!volumeSlider || !volumePercent || !closeSettingsBtn || !settingsModal) {
+        console.warn('Main menu settings elements not found');
+        return;
+      }
+
+      // Load saved volume from localStorage
+      var savedVolume = localStorage.getItem('gameVolume');
+      if (savedVolume) {
+        volumeSlider.value = savedVolume;
+        volumePercent.textContent = savedVolume + '%';
+      }
+
+      volumeSlider.addEventListener('input', function () {
+        var vol = this.value;
+        volumePercent.textContent = vol + '%';
+        localStorage.setItem('gameVolume', vol);
+        // Update audio volume
+        try {
+          var menuAudio = document.getElementById('bg-menu');
+          if (menuAudio) menuAudio.volume = vol / 100 * 0.7;
+        } catch (e) { console.warn(e); }
+      });
+
+      closeSettingsBtn.addEventListener('click', function () {
+        settingsModal.classList.remove('active');
+      });
+
+      // ESC key handler for main menu settings modal
+      document.addEventListener("keydown", function (evt) {
+        if (evt.key === "Escape" && settingsModal.classList.contains('active')) {
+          evt.preventDefault();
+          settingsModal.classList.remove('active');
+        }
+      });
+    }
+
+    /* ------------------ Save / Load Slots ------------------ */
+    function loadGame() {
+      openSaveLoadModal();
+    }
+
+    function openSaveLoadModal() {
+      var modal = document.getElementById('saveLoadModal');
+      if (!modal) return;
+      modal.classList.add('active');
+      renderSaveSlots();
+      var closeBtn = document.getElementById('closeSaveLoadBtn');
+      if (closeBtn) closeBtn.onclick = closeSaveLoadModal;
+    }
+
+    function closeSaveLoadModal() {
+      var modal = document.getElementById('saveLoadModal');
+      if (!modal) return;
+      modal.classList.remove('active');
+    }
+
+    function getSaveKey(slot) {
+      return 'nova_save_slot_' + slot;
+    }
+
+    function formatTimestamp(ts) {
+      if (!ts) return 'Unknown';
+      var d = new Date(ts);
+      return d.toLocaleString();
+    }
+
+    function renderSaveSlots() {
+      var container = document.getElementById('saveSlotsList');
+      if (!container) return;
+      var html = '';
+      for (var i = 1; i <= 5; i++) {
+        var key = getSaveKey(i);
+        var data = localStorage.getItem(key);
+        if (data) {
+          try {
+            var parsed = JSON.parse(data);
+            var savedAt = parsed.savedAt || 0;
+            var metaLabel = parsed.meta && parsed.meta.label ? parsed.meta.label : '';
+            html += '<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:space-between;">';
+            html += '<div><strong>Slot ' + i + '</strong>' + (metaLabel ? ' — ' + metaLabel : '') + '<br><small>' + formatTimestamp(savedAt) + '</small></div>';
+            html += '<div style="display:flex;gap:6px">';
+            html += '<button class="btn small" onclick="(function(){window.__nova_load_slot(' + i + ');})();">Load</button>';
+            html += '<button class="btn small" onclick="(function(){window.__nova_save_slot(' + i + ');})();">Save</button>';
+            html += '<button class="btn small" onclick="(function(){window.__nova_delete_slot(' + i + ');})();">Delete</button>';
+            html += '</div></div>';
+          } catch (e) {
+            html += '<div style="padding:8px;">Slot ' + i + ' — Invalid save data</div>';
+          }
+        } else {
+          html += '<div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:space-between;">';
+          html += '<div><strong>Slot ' + i + '</strong><br><small>Empty</small></div>';
+          html += '<div style="display:flex;gap:6px">';
+          html += '<button class="btn small" onclick="(function(){window.__nova_load_slot(' + i + ');})();" disabled>Load</button>';
+          html += '<button class="btn small" onclick="(function(){window.__nova_save_slot(' + i + ');})();">Save</button>';
+          html += '<button class="btn small" onclick="(function(){window.__nova_delete_slot(' + i + ');})();" disabled>Delete</button>';
+          html += '</div></div>';
+        }
+      }
+      container.innerHTML = html;
+      // expose helpers for inline onclick
+      window.__nova_save_slot = function(slot) { saveToSlot(slot); };
+      window.__nova_load_slot = function(slot) { loadFromSlot(slot); };
+      window.__nova_delete_slot = function(slot) { deleteSlot(slot); };
+    }
+
+    function saveToSlot(slot) {
+      var key = getSaveKey(slot);
+      var exists = !!localStorage.getItem(key);
+      if (exists) {
+        if (!confirm('Overwrite save in slot ' + slot + '?')) return;
+      }
+      try {
+        var snapshot = {
+          savedAt: Date.now(),
+          meta: { label: (getSelectedPlanet() ? getSelectedPlanet().name : 'Autosave') },
+          gameState: gameState
+        };
+        localStorage.setItem(key, JSON.stringify(snapshot));
+        alert('Game saved to slot ' + slot + '.');
+        renderSaveSlots();
+      } catch (e) {
+        alert('Failed to save: ' + e.message);
+      }
+    }
+
+    function loadFromSlot(slot) {
+      var key = getSaveKey(slot);
+      var data = localStorage.getItem(key);
+      if (!data) {
+        alert('No save in slot ' + slot + '.');
+        return;
+      }
+      if (!confirm('Load save from slot ' + slot + '? Unsaved progress will be lost.')) return;
+      try {
+        var parsed = JSON.parse(data);
+        if (parsed && parsed.gameState) {
+          // Replace gameState and re-render UI
+          gameState = parsed.gameState;
+          // Ensure DOM refs cached
+          cacheDom();
+          renderGalaxyMap();
+          initialRenderAll();
+          gameStarted = true;
+          startGameLoop();
+          closeSaveLoadModal();
+          alert('Loaded save from slot ' + slot + '.');
+        } else {
+          alert('Invalid save data in slot ' + slot + '.');
+        }
+      } catch (e) {
+        alert('Failed to load save: ' + e.message);
+      }
+    }
+
+    function deleteSlot(slot) {
+      var key = getSaveKey(slot);
+      var data = localStorage.getItem(key);
+      if (!data) return;
+      if (!confirm('Delete save in slot ' + slot + '?')) return;
+      localStorage.removeItem(key);
+      renderSaveSlots();
+    }
+
+    function generateMenuStars(container) {
+      if (!container) return;
+      container.innerHTML = "";
+      var STAR_COUNT = 30;
+      for (var i = 0; i < STAR_COUNT; i++) {
+        var star = document.createElement("div");
+        star.className = "menu-star-item";
+        
+        var left = Math.random() * 100;
+        var top = Math.random() * 100;
+        var size = 1 + Math.random() * 3;
+        var duration = (2 + Math.random() * 4).toFixed(1);
+        var delay = (Math.random() * 3).toFixed(1);
+        
+        star.style.left = left + "%";
+        star.style.top = top + "%";
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+        star.style.animationDuration = duration + "s";
+        star.style.animationDelay = delay + "s";
+        
+        container.appendChild(star);
+      }
+    }
+
+    function startNewGame() {
+      var mainMenu = document.getElementById("mainMenu");
+      mainMenu.classList.add("hidden");
+      gameStarted = true;
+      
+      setTimeout(function () {
+        initGameAfterMenu();
+      }, 100);
+    }
+
+    function loadGame() {
+      alert("Load Game feature coming soon!\n\nYour progress will be automatically saved.");
+    }
+
+    function openSettings() {
+      var mainMenuSettingsModal = document.getElementById('mainMenuSettingsModal');
+      console.log('openSettings called, modal:', mainMenuSettingsModal);
+      if (mainMenuSettingsModal) {
+        mainMenuSettingsModal.classList.add('active');
+        console.log('Settings modal opened');
+      } else {
+        console.warn('mainMenuSettingsModal not found');
+      }
+    }
+
+    function exitGame() {
+      if (confirm("Are you sure you want to exit NOVA CORE?")) {
+        // Close the browser window/tab
+        window.close();
+        
+        // Fallback: if close() is blocked, disable the page
+        setTimeout(function() {
+          document.body.innerHTML = "";
+          document.body.style.display = "none";
+        }, 100);
+      }
+    }
+
+    function initGameAfterMenu() {
+      cacheDom();
+      createBackgroundStars();
+      generateBaseGalaxy();
+      initSelection();
+      bindNavButtons();
+      bindSidePanelClicks();
+      bindViewDelegates();
+      bindRenamePlanet();
+      bindPlanetTabs();
+      initGalaxyControls();
+      initStarPopupControls();
+      initUnknownRegion();
+      initUnknownToggle();
+      initPauseMenu();
+      initSettingsModal();
+      initMessageStorage();
+      renderGalaxyMap();
+      centerOnStartingPlanet();
+      switchView("galaxy");
+      initialRenderAll();
+      startGameLoop();
+    }
+
+    // PAUSE MENU FUNCTIONS
+    var isPaused = false;
+
+    function initPauseMenu() {
+      var resumeBtn = document.getElementById("resumeBtn");
+      var pauseSettingsBtn = document.getElementById("pauseSettingsBtn");
+      var quitBtn = document.getElementById("quitBtn");
+
+      if (resumeBtn) {
+        resumeBtn.addEventListener("click", resumeGame);
+      }
+      if (pauseSettingsBtn) {
+        pauseSettingsBtn.addEventListener("click", openPauseSettings);
+      }
+      if (quitBtn) {
+        quitBtn.addEventListener("click", quitToMainMenu);
+      }
+
+      // ESC key handler - will be overridden by settings modal handler if open
+      document.addEventListener("keydown", function (evt) {
+        if (evt.key === "Escape") {
+          evt.preventDefault();
+          // Check if attack fleet modal is open
+          var attackModal = document.getElementById('attackFleetModal');
+          if (attackModal && attackModal.classList.contains('active')) {
+            attackModal.classList.remove('active');
+            return;
+          }
+          // Check if settings modal is open
+          var settingsModal = document.getElementById('settingsModal');
+          if (settingsModal && settingsModal.classList.contains('active')) {
+            settingsModal.classList.remove('active');
+          } else {
+            togglePauseMenu();
+          }
+        }
+      });
+    }
+
+    function initSettingsModal() {
+      var volumeSlider = document.getElementById('volumeSlider');
+      var volumePercent = document.getElementById('volumePercent');
+      var closeSettingsBtn = document.getElementById('closeSettingsBtn');
+      var settingsModal = document.getElementById('settingsModal');
+
+      // Load saved volume from localStorage
+      var savedVolume = localStorage.getItem('gameVolume');
+      if (savedVolume) {
+        volumeSlider.value = savedVolume;
+        volumePercent.textContent = savedVolume + '%';
+      }
+
+      if (volumeSlider) {
+        volumeSlider.addEventListener('input', function () {
+          var vol = this.value;
+          volumePercent.textContent = vol + '%';
+          localStorage.setItem('gameVolume', vol);
+          // Update audio volume
+          try {
+            var menuAudio = document.getElementById('bg-menu');
+            var gameplayAudio = document.getElementById('bg-gameplay');
+            if (menuAudio) menuAudio.volume = vol / 100 * 0.7;
+            if (gameplayAudio) gameplayAudio.volume = vol / 100 * 0.6;
+          } catch (e) { console.warn(e); }
+        });
+      }
+
+      if (closeSettingsBtn) {
+        closeSettingsBtn.addEventListener('click', function () {
+          if (settingsModal) settingsModal.classList.remove('active');
+        });
+      }
+    }
+
+    function togglePauseMenu() {
+      var pauseMenu = document.getElementById("pauseMenu");
+      if (!pauseMenu) return;
+
+      isPaused = !isPaused;
+      pauseMenu.classList.toggle("active", isPaused);
+    }
+
+    function resumeGame() {
+      var pauseMenu = document.getElementById("pauseMenu");
+      if (pauseMenu) {
+        pauseMenu.classList.remove("active");
+        isPaused = false;
+      }
+    }
+
+    function openPauseSettings() {
+      var settingsModal = document.getElementById('settingsModal');
+      if (settingsModal) {
+        settingsModal.classList.add('active');
+      }
+    }
+
+    function quitToMainMenu() {
+      var mainMenu = document.getElementById("mainMenu");
+      var pauseMenu = document.getElementById("pauseMenu");
+
+      if (confirm("Return to main menu? Any unsaved progress will be lost.")) {
+        gameStarted = false;
+        isPaused = false;
+
+        if (pauseMenu) {
+          pauseMenu.classList.remove("active");
+        }
+        if (mainMenu) {
+          mainMenu.classList.remove("hidden");
+        }
+
+        // Reset game state
+        location.reload();
+      }
+    }
+
+    function cacheDom() {
+      galaxyMapEl = document.getElementById("galaxyMap");
+      galaxyContentEl = document.getElementById("galaxyContent");
+      tooltipEl = document.getElementById("galaxyTooltip");
+      starPopupEl = document.getElementById("starPopup");
+      sidePanelContentEl = document.getElementById("sidePanelContent");
+
+      metalEl = document.getElementById("metalValue");
+      crystalEl = document.getElementById("crystalValue");
+      energyEl = document.getElementById("energyValue");
+      planetLabelEl = document.getElementById("currentPlanetLabel");
+      timeEl = document.getElementById("gameTimeLabel");
+
+      rateMetalEl = document.getElementById("rateMetal");
+      rateCrystalEl = document.getElementById("rateCrystal");
+      rateEnergyEl = document.getElementById("rateEnergy");
+      attackMultiplierQuickEl = document.getElementById("quickAttackMultiplier");
+
+      buildingsListEl = document.getElementById("buildingsList");
+      fleetListEl = document.getElementById("fleetList");
+      researchListEl = document.getElementById("researchList");
+
+      planetNameEl = document.getElementById("planetName");
+      planetTypeEl = document.getElementById("planetType");
+      planetPopulationEl = document.getElementById("planetPopulation");
+      planetHeaderSubtitleEl = document.getElementById("planetHeaderSubtitle");
+
+      allianceNameEl = document.getElementById("allianceName");
+      empirePlanetsEl = document.getElementById("empirePlanets");
+      empireFleetsEl = document.getElementById("empireFleets");
+      empireResourcesEl = document.getElementById("empireResources");
+      empireAttackMultEl = document.getElementById("empireAttackMultiplier");
+
+      fleetHintEl = document.getElementById("fleetHint");
+      renamePlanetBtnEl = document.getElementById("renamePlanetBtn");
+
+      bgStarsEl = document.getElementById("bgStars");
+      unknownRegionEl = document.getElementById("unknownRegion");
+      toggleUnknownBtnEl = document.getElementById("toggleUnknownBtn");
+
+      planetFleetListEl = document.getElementById("planetFleetList");
+      planetResearchSummaryEl = document.getElementById("planetResearchSummary");
+
+      defensePanelEl = document.getElementById("defensePanel");
+      defensePanelBodyEl = document.getElementById("defensePanelBody");
+
+      intelLogPanelEl = document.getElementById("intelLogPanel");
+    }
+
+    /* RANDOM BACKGROUND STARS */
+    function createBackgroundStars() {
+      if (!bgStarsEl) return;
+      var STAR_COUNT = 220;
+      var frag = document.createDocumentFragment();
+      for (var i = 0; i < STAR_COUNT; i++) {
+        var star = document.createElement("div");
+        star.className = "bg-star";
+
+        var size = 1 + Math.random() * 2;
+        var opacity = (0.2 + Math.random() * 0.8).toFixed(2);
+        var left = Math.random() * 100;
+        var top = Math.random() * 100;
+        var duration = (6 + Math.random() * 8).toFixed(1);
+        var delay = (Math.random() * 8).toFixed(1);
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+        star.style.left = left + "vw";
+        star.style.top = top + "vh";
+        star.style.opacity = opacity;
+        star.style.animationDuration = duration + "s";
+        star.style.animationDelay = delay + "s";
+
+        frag.appendChild(star);
+      }
+      bgStarsEl.appendChild(frag);
+    }
+
+    /* -------------------------------------------------------------
+       GENERATE GALAXY
+       ------------------------------------------------------------- */
+
+    function generateBaseGalaxy() {
+      var systems = [];
+
+      // Home system
+      var startingPlanet = {
+        id: "sol-terra",
+        name: "Terra",
+        type: "Industrial",
+        population: 8200000000,
+        owner: "player",
+        defenseLevel: 0,
+        defenseFleet: 0,
+        defenseShips: createEmptyFleet(),
+        scanned: true,
+        resources: { metal: 500, crystal: 300, energy: 200 },
+        resourceRates: { metal: 0, crystal: 0, energy: 0 },
+        localFleets: {
+          scoutHawk: 5,
+          swiftFang: 10,
+          blazeWing: 8,
+          ironShell: 3,
+          shieldHarbor: 2,
+          droneHive: 1,
+          starMule: 4,
+          rockDigger: 3,
+          ghostVeil: 2,
+          planetBreaker: 1000
+        },
+        buildings: {
+          metalMine: { level: 2, isUpgrading: false, finishAt: 0 },
+          solarPlant: { level: 2, isUpgrading: false, finishAt: 0 },
+          shipyard: { level: 1, isUpgrading: false, finishAt: 0 }
+        },
+        staticDefense: {
+          turrets: 3,
+          shieldBatteries: 1,
+          hangarBays: 1
+        }
+      };
+
+      var startingSystem = {
+        id: "sol",
+        name: "Sol",
+        x: 0,
+        y: 0,
+        isUnknown: false,
+        discovered: true,
+        region: null,
+        planets: [startingPlanet]
+      };
+      systems.push(startingSystem);
+
+      var types = ["Industrial", "Colony", "Research", "Trade Hub"];
+
+      // Known enemy / neutral systems
+      for (var i = 1; i <= BASE_KNOWN_SYSTEMS; i++) {
+        var sysId = "sys-" + i;
+        var sysName = "Sector " + (i < 10 ? "0" + i : i);
+        var planetName = "Outpost " + (i < 10 ? "0" + i : i);
+        var type = types[Math.floor(Math.random() * types.length)];
+        var pop = Math.round(Math.random() * (6000000000 - 50000000) + 50000000);
+
+        var lvl = Math.floor(Math.random() * 5) + 1;
+
+        // Generate defense fleet with new ship types
+        var defFleetTotal = 5 + Math.floor(Math.random() * 15);
+        var defShips = createEmptyFleet();
+        var shipKeys = Object.keys(shipConfigs);
+        var perType = Math.floor(defFleetTotal / shipKeys.length);
+        var remainder = defFleetTotal % shipKeys.length;
+        shipKeys.forEach(function(key, idx) {
+          defShips[key] = perType + (idx < remainder ? 1 : 0);
+        });
+
+        var planet = {
+          id: sysId + "-p1",
+          name: planetName,
+          type: type,
+          population: pop,
+          owner: "neutral",
+          defenseLevel: lvl,
+          defenseFleet: defFleetTotal,
+          defenseShips: defShips,
+          scanned: false,
+          devTimer: 0,
+          resources: { metal: 150, crystal: 90, energy: 60 },
+          resourceRates: { metal: 0, crystal: 0, energy: 0 },
+          localFleets: createEmptyFleet(),
+          buildings: {
+            metalMine: { level: 0, isUpgrading: false, finishAt: 0 },
+            solarPlant: { level: 0, isUpgrading: false, finishAt: 0 },
+            shipyard: { level: 0, isUpgrading: false, finishAt: 0 }
+          },
+          staticDefense: {
+            turrets: 1 + Math.floor(Math.random() * (lvl * 2 + 3)),
+            shieldBatteries: Math.floor(Math.random() * (lvl + 2)),
+            hangarBays: Math.floor(Math.random() * (lvl + 1))
+          }
+        };
+
+        var x, y, posOk, attempts = 0;
+        var minDist = 600; // Increased minimum distance to prevent stars being too close
+        do {
+          x = -4200 + Math.random() * 8400;
+          y = -4200 + Math.random() * 8400;
+          posOk = true;
+          
+          // Check all systems to ensure proper spacing
+          for (var j = 0; j < systems.length; j++) {
+            var dx = systems[j].x - x;
+            var dy = systems[j].y - y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minDist) {
+              posOk = false;
+              break;
+            }
+          }
+          
+          attempts++;
+          // After many attempts, gradually reduce minimum distance requirement
+          if (attempts > 50) {
+            minDist = 600;
+          }
+          if (attempts > 100) {
+            minDist = 400;
+          }
+          if (attempts > 150) {
+            minDist = 300;
+          }
+          if (attempts > 200) {
+            posOk = true; // Force accept to prevent infinite loop
+          }
+        } while (!posOk);
+
+        systems.push({
+          id: sysId,
+          name: sysName,
+          x: x,
+          y: y,
+          isUnknown: false,
+          discovered: true,
+          region: null,
+          planets: [planet]
+        });
+      }
+
+      // Pre-generate unknown-region systems (hidden until explored)
+      Object.keys(UNKNOWN_COUNTS).forEach(function (regionKey) {
+        var count = UNKNOWN_COUNTS[regionKey];
+        for (var k = 0; k < count; k++) {
+          var unkId = regionKey + "-" + k;
+          var unkName = "Uncharted " + regionKey.toUpperCase() + " " + (k + 1);
+          var unkType = "Uncharted World";
+          var unkPop = Math.round(Math.random() * (4000000000 - 100000000) + 100000000);
+
+          var unkLvl = Math.floor(Math.random() * 5) + 1;
+          var uTotal = 10 + Math.floor(Math.random() * 20);
+          var uShips = createEmptyFleet();
+          var shipKeys = Object.keys(shipConfigs);
+          var perType = Math.floor(uTotal / shipKeys.length);
+          var remainder = uTotal % shipKeys.length;
+          shipKeys.forEach(function(key, idx) {
+            uShips[key] = perType + (idx < remainder ? 1 : 0);
+          });
+
+          var unkPlanet = {
+            id: unkId + "-p1",
+            name: "Unknown World " + (k + 1),
+            type: unkType,
+            population: unkPop,
+            owner: "neutral",
+            defenseLevel: unkLvl,
+            defenseFleet: uTotal,
+            defenseShips: uShips,
+            scanned: false,
+            devTimer: 0,
+            resources: { metal: 200, crystal: 120, energy: 80 },
+            resourceRates: { metal: 0, crystal: 0, energy: 0 },
+            localFleets: createEmptyFleet(),
+            buildings: {
+              metalMine: { level: 0, isUpgrading: false, finishAt: 0 },
+              solarPlant: { level: 0, isUpgrading: false, finishAt: 0 },
+              shipyard: { level: 0, isUpgrading: false, finishAt: 0 }
+            },
+            staticDefense: {
+              turrets: 2 + Math.floor(Math.random() * (unkLvl * 2 + 4)),
+              shieldBatteries: 1 + Math.floor(Math.random() * (unkLvl + 3)),
+              hangarBays: Math.floor(Math.random() * (unkLvl + 2))
+            }
+          };
+
+          systems.push({
+            id: unkId,
+            name: unkName,
+            x: -4500 + Math.random() * 9000,
+            y: -4500 + Math.random() * 9000,
+            isUnknown: true,
+            discovered: false,
+            region: regionKey,
+            planets: [unkPlanet]
+          });
+        }
+      });
+
+      gameState.systems = systems;
+      gameState.selectedSystemId = startingSystem.id;
+      gameState.selectedPlanetId = startingPlanet.id;
+
+      // initialize global fleet summary from local fleets
+      recomputeEmpireFleetTotals();
+    }
+
+    function initSelection() {
+      if (!gameState.selectedSystemId && gameState.systems.length > 0) {
+        gameState.selectedSystemId = gameState.systems[0].id;
+        if (gameState.systems[0].planets.length > 0) {
+          gameState.selectedPlanetId = gameState.systems[0].planets[0].id;
+        }
+      }
+    }
+
+    function startGameLoop() {
+      if (gameLoopIntervalId) return;
+      lastTickTime = Date.now();
+      gameLoopIntervalId = setInterval(function () {
+        var now = Date.now();
+        var dt = Math.max(1, Math.round((now - lastTickTime) / 1000));
+        lastTickTime = now;
+        gameTick(dt);
+      }, 1000);
+    }
+
+    /* -------------------------------------------------------------
+       VIEW SWITCHING
+       ------------------------------------------------------------- */
+
+    function bindNavButtons() {
+      var navButtons = document.querySelectorAll(".nav-btn[data-view]");
+      navButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var view = btn.getAttribute("data-view");
+          switchView(view);
+        });
+      });
+
+      document.addEventListener("keydown", function (evt) {
+        // Don't trigger hotkeys when typing in input fields
+        if (evt.target.tagName === 'INPUT' || evt.target.tagName === 'TEXTAREA') {
+          evt.stopPropagation();
+          return;
+        }
+        
+        var key = evt.key;
+        if (key === "1") switchView("galaxy");
+        else if (key === "2") switchView("planet");
+        else if (key === "3") switchView("fleet");
+        else if (key === "4") switchView("research");
+        else if (key === "5") switchView("empire");
+      });
+    }
+
+    function switchView(viewId) {
+      currentView = viewId;
+
+      var views = document.querySelectorAll(".view");
+      views.forEach(function (view) {
+        view.classList.toggle("active", view.id === "view-" + viewId);
+      });
+
+      var navButtons = document.querySelectorAll(".nav-btn[data-view]");
+      navButtons.forEach(function (btn) {
+        btn.classList.toggle("active", btn.getAttribute("data-view") === viewId);
+      });
+
+      if (viewId !== "galaxy") {
+        hideStarPopup();
+      }
+
+      if (viewId === "planet") {
+        renderPlanetView();
+      } else if (viewId === "fleet") {
+        renderFleetView();
+      } else if (viewId === "research") {
+        renderResearchView();
+      } else if (viewId === "empire") {
+        renderEmpireView();
+      }
+    }
+
+    /* -------------------------------------------------------------
+       PLANET TABS
+       ------------------------------------------------------------- */
+
+    function bindPlanetTabs() {
+      var tabButtons = document.querySelectorAll(".planet-tab-btn");
+      tabButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var tab = btn.getAttribute("data-planet-tab");
+          setPlanetTab(tab);
+        });
+      });
+    }
+
+    function setPlanetTab(tab) {
+      var tabButtons = document.querySelectorAll(".planet-tab-btn");
+      tabButtons.forEach(function (btn) {
+        btn.classList.toggle("active", btn.getAttribute("data-planet-tab") === tab);
+      });
+
+      var surface = document.getElementById("planetSurfaceSection");
+      var fleet = document.getElementById("planetFleetSection");
+      var research = document.getElementById("planetResearchSection");
+
+      if (surface && fleet && research) {
+        surface.style.display = (tab === "surface") ? "block" : "none";
+        fleet.style.display = (tab === "fleet") ? "block" : "none";
+        research.style.display = (tab === "research") ? "block" : "none";
+      }
+    }
+
+    /* -------------------------------------------------------------
+       GALAXY MAP + CAMERA + ZOOM + DRAG
+       ------------------------------------------------------------- */
+
+    function renderGalaxyMap() {
+      if (!galaxyContentEl) return;
+
+      galaxyContentEl.innerHTML = "";
+      var grid = document.createElement("div");
+      grid.className = "galaxy-grid";
+      galaxyContentEl.appendChild(grid);
+      var overlay = document.createElement("div");
+      overlay.className = "galaxy-overlay";
+      galaxyContentEl.appendChild(overlay);
+
+      gameState.systems.forEach(function (system) {
+        if (system.isUnknown && !system.discovered) return;
+
+        var starEl = document.createElement("div");
+        starEl.className = "star";
+        starEl.style.left = system.x + "px";
+        starEl.style.top = system.y + "px";
+        starEl.setAttribute("data-system-id", system.id);
+
+        var hasPlayerPlanet = system.planets.some(function (p) { return p.owner === "player"; });
+        if (hasPlayerPlanet) {
+          starEl.classList.add("player-owned");
+          // Add Earth image for player-owned systems
+          var earthImg = document.createElement("img");
+          earthImg.src = "Images/earth.png.png";
+          earthImg.className = "earth-image";
+          earthImg.alt = "Earth";
+          // Random size for Earth (20-28px)
+          var earthSize = 20 + Math.random() * 8;
+          earthImg.style.width = earthSize + "px";
+          earthImg.style.height = earthSize + "px";
+          starEl.appendChild(earthImg);
+        } else {
+          // Add random planet image for non-player systems
+          var planetImages = ["Images/Planet1.png", "Images/Planet2.png", "Images/Planet3.png", "Images/Planet4.png", "Images/Planet5.png"];
+          var randomIndex = Math.floor(Math.random() * planetImages.length);
+          var planetImg = document.createElement("img");
+          planetImg.src = planetImages[randomIndex];
+          planetImg.className = "earth-image";
+          planetImg.alt = "Planet";
+          // Same random size as Terra (20-28px)
+          var planetSize = 20 + Math.random() * 8;
+          planetImg.style.width = planetSize + "px";
+          planetImg.style.height = planetSize + "px";
+          starEl.appendChild(planetImg);
+        }
+
+        if (system.id === gameState.selectedSystemId) {
+          starEl.classList.add("selected");
+        }
+
+        var labelEl = document.createElement("div");
+        labelEl.className = "star-label";
+
+        var playerPlanet = system.planets.find(function (p) { return p.owner === "player"; });
+        var displayLabel = playerPlanet ? playerPlanet.name : system.name;
+        labelEl.textContent = displayLabel;
+        
+        starEl.appendChild(labelEl);
+
+        starEl.addEventListener("mouseenter", function (evt) {
+          showTooltip(system, evt);
+        });
+
+        starEl.addEventListener("mousemove", function (evt) {
+          positionTooltip(evt);
+        });
+
+        starEl.addEventListener("mouseleave", function () {
+          hideTooltip();
+        });
+
+        starEl.addEventListener("click", function (evt) {
+          evt.stopPropagation();
+          selectSystem(system.id);
+          showStarPopup(system, starEl);
+        });
+
+        galaxyContentEl.appendChild(starEl);
+      });
+
+      galaxyContentEl.appendChild(starPopupEl);
+      updateGalaxyCamera();
+    }
+
+    function initGalaxyControls() {
+      if (!galaxyMapEl || !galaxyContentEl) return;
+
+      galaxyMapEl.addEventListener("mousedown", onGalaxyMouseDown);
+
+      galaxyMapEl.addEventListener("click", function (evt) {
+        if (!evt.target.closest(".star") && !evt.target.closest(".star-popup")) {
+          hideStarPopup();
+        }
+      });
+
+      document.addEventListener("keydown", function (evt) {
+        // Don't trigger movement when typing in input fields
+        if (evt.target.tagName === 'INPUT' || evt.target.tagName === 'TEXTAREA') {
+          evt.stopPropagation();
+          return;
+        }
+        
+        var step = 30;
+        var key = evt.key;
+        var moved = false;
+
+        if (key === "ArrowLeft" || key === "a" || key === "A") {
+          galaxyCamera.x += step;
+          moved = true;
+        } else if (key === "ArrowRight" || key === "d" || key === "D") {
+          galaxyCamera.x -= step;
+          moved = true;
+        } else if (key === "ArrowUp" || key === "w" || key === "W") {
+          galaxyCamera.y += step;
+          moved = true;
+        } else if (key === "ArrowDown" || key === "s" || key === "S") {
+          galaxyCamera.y -= step;
+          moved = true;
+        }
+
+        if (moved) {
+          updateGalaxyCamera();
+        }
+      });
+
+      galaxyMapEl.addEventListener("wheel", onGalaxyWheel, { passive: false });
+
+      updateGalaxyCamera();
+    }
+
+    function onGalaxyMouseDown(evt) {
+      if (evt.button !== 0) return;
+
+      if (evt.target.closest(".star") || evt.target.closest(".star-popup")) {
+        return;
+      }
+
+      isPanning = true;
+      panStartX = evt.clientX;
+      panStartY = evt.clientY;
+      panStartCameraX = galaxyCamera.x;
+      panStartCameraY = galaxyCamera.y;
+      galaxyContentEl.style.cursor = "grabbing";
+
+      document.addEventListener("mousemove", onGalaxyMouseMove);
+      document.addEventListener("mouseup", onGalaxyMouseUp);
+    }
+
+    function onGalaxyMouseMove(evt) {
+      if (!isPanning) return;
+      var dx = evt.clientX - panStartX;
+      var dy = evt.clientY - panStartY;
+      galaxyCamera.x = panStartCameraX + dx;
+      galaxyCamera.y = panStartCameraY + dy;
+      updateGalaxyCamera();
+    }
+
+    function onGalaxyMouseUp() {
+      if (!isPanning) return;
+      isPanning = false;
+      galaxyContentEl.style.cursor = "grab";
+      document.removeEventListener("mousemove", onGalaxyMouseMove);
+      document.removeEventListener("mouseup", onGalaxyMouseUp);
+    }
+
+    function onGalaxyWheel(evt) {
+      evt.preventDefault();
+      if (!galaxyMapEl || !galaxyContentEl) return;
+      
+      var delta = evt.deltaY || evt.wheelDelta;
+      if (!delta) return;
+      
+      // Get screen center
+      var rect = galaxyMapEl.getBoundingClientRect();
+      var centerX = rect.width / 2;
+      var centerY = rect.height / 2;
+      
+      // Store old zoom for calculation
+      var oldZoom = galaxyZoom;
+      
+      // Calculate new zoom level
+      var zoomFactor = 1 - delta * 0.001;
+      galaxyZoom *= zoomFactor;
+      if (galaxyZoom < MIN_ZOOM) galaxyZoom = MIN_ZOOM;
+      if (galaxyZoom > MAX_ZOOM) galaxyZoom = MAX_ZOOM;
+      
+      // With transform: translate(x, y) scale(z)
+      // Screen point maps to world as: worldPos = (screenPos - translate) / scale
+      // To keep screen center point fixed during zoom:
+      // worldX = (centerX - oldCameraX) / oldZoom
+      // After zoom: centerX = worldX * newZoom + newCameraX
+      // So: newCameraX = centerX - worldX * newZoom
+      var worldX = (centerX - galaxyCamera.x) / oldZoom;
+      var worldY = (centerY - galaxyCamera.y) / oldZoom;
+      
+      galaxyCamera.x = centerX - worldX * galaxyZoom;
+      galaxyCamera.y = centerY - worldY * galaxyZoom;
+      
+      updateGalaxyCamera();
+    }
+
+    function updateGalaxyCamera() {
+      if (!galaxyContentEl) return;
+      galaxyContentEl.style.transform =
+        "translate(" + galaxyCamera.x + "px," + galaxyCamera.y + "px) scale(" + galaxyZoom + ")";
+      // Update live location display
+      var locEl = document.getElementById('locationXY');
+      if (locEl && galaxyMapEl) {
+        // (0,0) is center of the map
+        var x = Math.round(galaxyCamera.x);
+        var y = Math.round(galaxyCamera.y);
+        locEl.textContent = "X: " + x + ", Y: " + y;
+      }
+    }
+
+    function centerOnStartingPlanet() {
+      if (!galaxyMapEl) return;
+      
+      // Find the starting system (Sol)
+      var startingSystem = gameState.systems.find(function(sys) {
+        return sys.id === "sol";
+      });
+      
+      if (!startingSystem) return;
+      
+      // Get viewport dimensions
+      var viewportWidth = galaxyMapEl.clientWidth;
+      var viewportHeight = galaxyMapEl.clientHeight;
+      
+      // Center camera on starting planet
+      galaxyCamera.x = (viewportWidth / 2) - (startingSystem.x * galaxyZoom);
+      galaxyCamera.y = (viewportHeight / 2) - (startingSystem.y * galaxyZoom);
+      
+      updateGalaxyCamera();
+    }
+
+    /* -------------------------------------------------------------
+       TOOLTIP + STAR POPUP
+       ------------------------------------------------------------- */
+
+    function showTooltip(system, evt) {
+      if (!tooltipEl) return;
+      var mainPlanet = system.planets[0];
+      var ownerLabel = getOwnerLabel(mainPlanet.owner);
+
+      var defLevel = mainPlanet.defenseLevel || 0;
+      var totalShips = getDefenseTotalShips(mainPlanet);
+      var scanned = !!mainPlanet.scanned;
+
+      var defenseText;
+      if (mainPlanet.owner === "player") {
+        defenseText = "Friendly world";
+      } else {
+        var fleetPart = scanned
+          ? ("Turrets " + totalShips)
+          : "Turrets ??? (scan required)";
+        defenseText = "Defense Lv " + defLevel + " • " + fleetPart;
+      }
+
+      tooltipEl.classList.add("visible");
+      tooltipEl.innerHTML =
+        "<strong>" + system.name + "</strong><br>" +
+        system.planets.length + " planet(s) • " + ownerLabel + "<br>" +
+        defenseText;
+      positionTooltip(evt);
+    }
+
+    function positionTooltip(evt) {
+      if (!tooltipEl || !galaxyMapEl) return;
+      var rect = galaxyMapEl.getBoundingClientRect();
+      var x = evt.clientX - rect.left;
+      var y = evt.clientY - rect.top;
+      tooltipEl.style.left = x + "px";
+      tooltipEl.style.top = y + "px";
+    }
+
+    function hideTooltip() {
+      if (!tooltipEl) return;
+      tooltipEl.classList.remove("visible");
+    }
+
+    function showStarPopup(system, starEl) {
+      if (!starPopupEl) return;
+      var mainPlanet = system.planets[0];
+      var x = starEl.offsetLeft;
+      var y = starEl.offsetTop;
+
+      var ownerLabel = getOwnerLabel(mainPlanet.owner);
+
+      var defLevel = mainPlanet.defenseLevel || 1;
+      var totalShips = getDefenseTotalShips(mainPlanet);
+      var scanned = !!mainPlanet.scanned;
+
+      var defenseInfo = "";
+      if (mainPlanet.owner !== "player") {
+        if (scanned) {
+          defenseInfo = " • Def Lv " + defLevel + " • Turrets " + totalShips +
+            " (" + defenseShipsToString(mainPlanet) + ")";
+        } else {
+          defenseInfo = " • Def Lv " + defLevel + " • Turrets ??? (scan required)";
+        }
+      }
+
+      var planetsHtml = system.planets.map(function (p) {
+        var label = getOwnerLabel(p.owner);
+        if (p.owner !== "player") {
+          label += " • Lv " + (p.defenseLevel || 1);
+        }
+        return (
+          '<div class="popup-planet-row" data-planet-id="' + p.id + '">' +
+            '<span class="popup-planet-name">' + p.name + '</span>' +
+            '<span class="popup-planet-type">' + label + '</span>' +
+          '</div>'
+        );
+      }).join("");
+
+      var actionsHtml = "";
+      if (mainPlanet.owner === "player") {
+        actionsHtml =
+          '<button class="btn small popup-close-btn">Close</button>';
+      } else {
+        // no separate Colonize button anymore; attack handles conquest+colonize
+        actionsHtml =
+          '<button class="btn small popup-attack-btn" data-planet-id="' + mainPlanet.id + '">Attack</button>' +
+          '<button class="btn small popup-scan-btn" data-planet-id="' + mainPlanet.id + '">Scan</button>' +
+          '<button class="btn small popup-close-btn">Close</button>';
+      }
+
+      starPopupEl.dataset.systemId = system.id;
+      starPopupEl.innerHTML =
+        '<div class="popup-header">' +
+          '<div class="popup-title">' + system.name + '</div>' +
+          '<div class="popup-subtitle">Main planet: ' + mainPlanet.name + ' • ' + ownerLabel + defenseInfo + '</div>' +
+        '</div>' +
+        '<div class="popup-planets">' + planetsHtml + '</div>' +
+        '<div class="popup-actions">' + actionsHtml + '</div>';
+
+      starPopupEl.style.left = (x + 26) + "px";
+      starPopupEl.style.top = (y - 4) + "px";
+      starPopupEl.classList.add("visible");
+    }
+
+    function hideStarPopup() {
+      if (!starPopupEl) return;
+      starPopupEl.classList.remove("visible");
+    }
+
+    function initStarPopupControls() {
+      if (!starPopupEl) return;
+      starPopupEl.addEventListener("click", function (evt) {
+        var closeBtn = evt.target.closest(".popup-close-btn");
+        if (closeBtn) {
+          hideStarPopup();
+          return;
+        }
+
+        var attackBtn = evt.target.closest(".popup-attack-btn");
+        if (attackBtn) {
+          var attackId = attackBtn.getAttribute("data-planet-id");
+          if (attackId) {
+            attackPlanet(attackId);
+          }
+          hideStarPopup();
+          return;
+        }
+
+        var scanBtn = evt.target.closest(".popup-scan-btn");
+        if (scanBtn) {
+          var scanId = scanBtn.getAttribute("data-planet-id");
+          if (scanId) {
+            scanPlanet(scanId);
+          }
+          hideStarPopup();
+          return;
+        }
+
+        var planetRow = evt.target.closest(".popup-planet-row");
+        if (planetRow) {
+          var pid2 = planetRow.getAttribute("data-planet-id");
+          if (pid2) {
+            selectPlanet(pid2);
+            switchView("planet");
+          }
+          hideStarPopup();
+        }
+      });
+    }
+
+    /* -------------------------------------------------------------
+       UNKNOWN REGIONS / EXPLORATION
+       ------------------------------------------------------------- */
+
+    function initUnknownRegion() {
+      var buttons = document.querySelectorAll(".unknown-explore-btn");
+      buttons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var region = btn.getAttribute("data-region");
+          exploreUnknownSpace(region);
+        });
+      });
+      updateUnknownRegionUI();
+    }
+
+    function initUnknownToggle() {
+      if (!toggleUnknownBtnEl || !unknownRegionEl) return;
+      toggleUnknownBtnEl.addEventListener("click", function () {
+        unknownVisible = !unknownVisible;
+        updateUnknownVisibility();
+      });
+      updateUnknownVisibility();
+    }
+
+    function updateUnknownVisibility() {
+      if (!unknownRegionEl || !toggleUnknownBtnEl) return;
+      unknownRegionEl.style.display = unknownVisible ? "block" : "none";
+      var labelSpan = toggleUnknownBtnEl.querySelector(".nav-label");
+      var text = "Unknown Regions: " + (unknownVisible ? "On" : "Off");
+      if (labelSpan) labelSpan.textContent = text;
+      else toggleUnknownBtnEl.textContent = text;
+    }
+
+    function updateUnknownRegionUI() {
+      var activePlanet = getAnyOwnedPlanet();
+      var reconCount = 0;
+      if (activePlanet && activePlanet.localFleets) {
+        reconCount = activePlanet.localFleets.scoutHawk || 0;
+      }
+
+      var countsByRegion = {};
+
+      gameState.systems.forEach(function (sys) {
+        if (sys.isUnknown && !sys.discovered && sys.region) {
+          countsByRegion[sys.region] = (countsByRegion[sys.region] || 0) + 1;
+        }
+      });
+
+      var countEls = document.querySelectorAll(".unknown-count");
+      countEls.forEach(function (span) {
+        var region = span.getAttribute("data-region-count");
+        var count = countsByRegion[region] || 0;
+        span.textContent = count;
+      });
+
+      var buttons = document.querySelectorAll(".unknown-explore-btn");
+      buttons.forEach(function (btn) {
+        var region = btn.getAttribute("data-region");
+        var cfg = UNKNOWN_REGION_CONFIG[region];
+        var remaining = countsByRegion[region] || 0;
+        btn.disabled = remaining === 0 || reconCount < cfg.reconCost;
+      });
+    }
+
+    function exploreUnknownSpace(region) {
+      var cfg = UNKNOWN_REGION_CONFIG[region];
+      if (!cfg) return;
+
+      var origin = getAnyOwnedPlanet();
+      if (!origin) {
+        alert("You need an active owned planet to launch recon probes.");
+        return;
+      }
+      if (!origin.localFleets) {
+        origin.localFleets = createEmptyFleet();
+      }
+
+      var reconCount = origin.localFleets.scoutHawk || 0;
+      if (reconCount < cfg.reconCost) {
+        alert("You need at least " + cfg.reconCost + " Scout Hawk (Recon) units on " + origin.name + " to explore the " + cfg.label + ".");
+        return;
+      }
+
+      var target = null;
+      for (var i = 0; i < gameState.systems.length; i++) {
+        var sys = gameState.systems[i];
+        if (sys.isUnknown && !sys.discovered && sys.region === region) {
+          target = sys;
+          break;
+        }
+      }
+
+      if (!target) {
+        alert("No more unknown systems remain in this region.");
+        updateUnknownRegionUI();
+        return;
+      }
+
+      origin.localFleets.scoutHawk = Math.max(0, reconCount - cfg.reconCost);
+
+      revealUnknownSystem(target);
+
+      // Show discovery alert with location coordinates
+      var coordX = target.x.toFixed(1);
+      var coordY = target.y.toFixed(1);
+      alert(
+        "🔭 RECON DISCOVERY\n\n" +
+        "System: " + target.name + "\n" +
+        "Region: " + cfg.label + "\n\n" +
+        "📍 Location Coordinates:\n" +
+        "X: " + coordX + "%\n" +
+        "Y: " + coordY + "%\n\n" +
+        "The system is now visible on your galaxy map!"
+      );
+
+      logEvent("EXPLORE", "Recon from " + origin.name + " discovered a new star system in the " +
+        cfg.label + ": " + target.name + " (Coords: " + coordX + ", " + coordY + ").");
+
+      renderGalaxyMap();
+      // Center the galaxy view on the new system
+      setTimeout(function() {
+        if (galaxyContentEl && galaxyMapEl) {
+          var starEls = galaxyContentEl.querySelectorAll('.star');
+          var starEl = null;
+          starEls.forEach(function(el) {
+            if (el.getAttribute('data-system-id') === target.id) {
+              starEl = el;
+            }
+          });
+          if (starEl) {
+            var mapRect = galaxyMapEl.getBoundingClientRect();
+            var starRect = starEl.getBoundingClientRect();
+            var offsetX = (mapRect.width / 2) - (starRect.left + starRect.width / 2 - mapRect.left);
+            var offsetY = (mapRect.height / 2) - (starRect.top + starRect.height / 2 - mapRect.top);
+            galaxyCamera.x += offsetX;
+            galaxyCamera.y += offsetY;
+            updateGalaxyCamera();
+          }
+        }
+      }, 50);
+
+      renderFleetView();
+      renderEmpireView();
+      renderTopBar();
+      renderQuickStats();
+      renderSidePanel();
+      renderDefensePanel();
+      updateUnknownRegionUI();
+    }
+
+    function revealUnknownSystem(system) {
+      system.discovered = true;
+      system.isUnknown = false;
+
+      var regionKey = system.region || "rim";
+      var cfg = UNKNOWN_REGION_CONFIG[regionKey] || UNKNOWN_REGION_CONFIG.rim;
+
+      var x, y, posOk, attempts = 0;
+      do {
+        x = cfg.minX + Math.random() * (cfg.maxX - cfg.minX);
+        y = cfg.minY + Math.random() * (cfg.maxY - cfg.minY);
+        posOk = true;
+
+        for (var i = 0; i < gameState.systems.length; i++) {
+          var s = gameState.systems[i];
+          if (s === system) continue;
+          if (s.isUnknown && !s.discovered) continue;
+          var dx = s.x - x;
+          var dy = s.y - y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          
+          // Check if system has player-owned planets - require more distance
+          var hasPlayerPlanet = s.planets && s.planets.some(function(p) { return p.owner === "player"; });
+          var minDist = hasPlayerPlanet ? 800 : 400;
+          
+          if (dist < minDist) {
+            posOk = false;
+            break;
+          }
+        }
+        attempts++;
+      } while (!posOk && attempts < 50);
+
+      system.x = x;
+      system.y = y;
+    }
+
+    /* -------------------------------------------------------------
+       SIDE PANEL
+       ------------------------------------------------------------- */
+
+    function bindSidePanelClicks() {
+      if (!sidePanelContentEl) return;
+      sidePanelContentEl.addEventListener("click", function (evt) {
+        var li = evt.target.closest("[data-planet-id]");
+        if (!li) return;
+        var planetId = li.getAttribute("data-planet-id");
+        // Center the galaxy view on the planet's system
+        var found = findPlanetById(planetId);
+        if (found.system) {
+          // Find the star element for this system
+          var starEls = galaxyContentEl.querySelectorAll('.star');
+          var starEl = null;
+          starEls.forEach(function(el) {
+            if (el.getAttribute('data-system-id') === found.system.id) {
+              starEl = el;
+            }
+          });
+          if (starEl && galaxyMapEl) {
+            var mapRect = galaxyMapEl.getBoundingClientRect();
+            var starRect = starEl.getBoundingClientRect();
+            // Calculate offset to center the star
+            var offsetX = (mapRect.width / 2) - (starRect.left + starRect.width / 2 - mapRect.left);
+            var offsetY = (mapRect.height / 2) - (starRect.top + starRect.height / 2 - mapRect.top);
+            galaxyCamera.x += offsetX;
+            galaxyCamera.y += offsetY;
+            updateGalaxyCamera();
+          }
+        }
+        selectPlanet(planetId);
+      });
+    }
+
+    function renderSidePanel() {
+      if (!sidePanelContentEl) return;
+
+      var owned = [];
+      gameState.systems.forEach(function (sys) {
+        sys.planets.forEach(function (p) {
+          if (p.owner === "player") {
+            owned.push({ system: sys, planet: p });
+          }
+        });
+      });
+
+      var html = '<div class="panel-block">';
+      if (owned.length === 0) {
+        html += '<div class="panel-title">No Colonies</div>';
+        html += '<div class="panel-subtitle">Attack enemy planets in the Galaxy view to expand.</div>';
+      } else {
+        html += '<div class="panel-title">Colonized Planets</div>';
+        html += '<div class="panel-subtitle">' + owned.length + ' owned world(s).</div>';
+        html += '<ul class="panel-list">';
+        var activeId = gameState.selectedPlanetId;
+        owned.forEach(function (entry) {
+          var p = entry.planet;
+          var selected = (p.id === activeId);
+          html += '<li class="panel-list-item ' + (selected ? "selected" : "") + '" data-planet-id="' + p.id + '">';
+          html += '<span class="name">' + p.name + '</span>';
+          html += '<span class="tag">' + entry.system.name + '</span>';
+          html += '</li>';
+        });
+        html += '</ul>';
+        html += '<div class="panel-note">Click to jump between your planets instantly.</div>';
+      }
+      html += '</div>';
+
+      sidePanelContentEl.innerHTML = html;
+    }
+
+    function selectSystem(systemId) {
+      var targetSys = gameState.systems.find(function(s) { return s.id === systemId; });
+      if (!targetSys) return;
+      
+      var current = findPlanetById(gameState.selectedPlanetId);
+      var hasPlayerPlanet = targetSys.planets.some(function(p) { return p.owner === "player"; });
+      
+      // Only change selectedSystemId if clicking on your own system
+      // This keeps your owned planet's system highlighted in blue
+      if (hasPlayerPlanet) {
+        gameState.selectedSystemId = systemId;
+        // Select first planet in the owned system
+        if (targetSys.planets.length > 0) {
+          gameState.selectedPlanetId = targetSys.planets[0].id;
+        }
+      }
+      // If clicking enemy/unclaimed system, keep your current planet selected
+      // Don't change selectedSystemId so your owned system stays highlighted
+
+      refreshStarSelection();
+      renderSidePanel();
+      renderTopBar();
+      renderDefensePanel();
+      if (currentView === "planet") {
+        renderPlanetView();
+      }
+      if (currentView === "empire") {
+        renderEmpireView();
+      }
+    }
+
+    function refreshStarSelection() {
+      if (!galaxyContentEl) return;
+      var stars = galaxyContentEl.querySelectorAll(".star");
+      stars.forEach(function (star) {
+        var id = star.getAttribute("data-system-id");
+        star.classList.toggle("selected", id === gameState.selectedSystemId);
+      });
+    }
+
+    function selectPlanet(planetId) {
+      var found = findPlanetById(planetId);
+      if (!found.planet || !found.system) return;
+      gameState.selectedSystemId = found.system.id;
+      gameState.selectedPlanetId = found.planet.id;
+
+      refreshStarSelection();
+      renderSidePanel();
+      renderTopBar();
+      renderDefensePanel();
+      if (currentView === "planet") {
+        renderPlanetView();
+      }
+    }
+
+    /* -------------------------------------------------------------
+       RENAME PLANET (OWNED)
+       ------------------------------------------------------------- */
+
+    function bindRenamePlanet() {
+      if (!renamePlanetBtnEl) return;
+      renamePlanetBtnEl.addEventListener("click", function () {
+        var planet = getSelectedPlanet();
+        if (!planet) {
+          alert("No planet selected to rename.");
+          return;
+        }
+        if (planet.owner !== "player") {
+          alert("You can only rename planets you own.");
+          return;
+        }
+        var newName = window.prompt("Enter a new name for this planet:", planet.name);
+        if (newName && newName.trim().length > 0) {
+          planet.name = newName.trim();
+          renderTopBar();
+          renderPlanetView();
+          renderGalaxyMap();
+          renderSidePanel();
+          renderDefensePanel();
+        }
+      });
+    }
+
+    /* -------------------------------------------------------------
+       PLANET VIEW / BUILDINGS / LOCAL FLEET / LOCAL RESEARCH
+       ------------------------------------------------------------- */
+
+    function bindViewDelegates() {
+      if (buildingsListEl) {
+        buildingsListEl.addEventListener("click", function (evt) {
+          var btn = evt.target.closest(".upgrade-btn");
+          if (!btn) return;
+          var buildingId = btn.getAttribute("data-building-id");
+          upgradeBuilding(buildingId);
+        });
+      }
+
+      if (fleetListEl) {
+        fleetListEl.addEventListener("click", function (evt) {
+          var btn = evt.target.closest(".build-ship-btn");
+          if (!btn) return;
+          var shipId = btn.getAttribute("data-ship-id");
+          var row = btn.closest(".fleet-row");
+          var input = row.querySelector(".ship-amount-input");
+          var amount = parseInt(input.value, 10);
+          if (isNaN(amount) || amount <= 0) {
+            alert("Enter a valid number of ships to build.");
+            return;
+          }
+          buildShips(shipId, amount);
+        });
+      }
+
+      if (researchListEl) {
+        researchListEl.addEventListener("click", function (evt) {
+          var btn = evt.target.closest(".research-btn");
+          if (!btn) return;
+          if (btn.disabled) return;
+          var techId = btn.getAttribute("data-tech-id");
+          startResearch(techId);
+        });
+      }
+    }
+
+    function renderPlanetView() {
+      var planet = getSelectedPlanet();
+
+      if (!planet) {
+        planetNameEl.textContent = "No Planet Selected";
+        planetTypeEl.textContent = "—";
+        planetPopulationEl.textContent = "—";
+        planetHeaderSubtitleEl.textContent = "Select or conquer a planet to manage its surface.";
+        buildingsListEl.innerHTML =
+          '<div class="hint-text">No buildings to show. Choose a planet first.</div>';
+        if (planetFleetListEl) {
+          planetFleetListEl.innerHTML =
+            '<div class="hint-text">No fleet to show.</div>';
+        }
+        if (planetResearchSummaryEl) {
+          planetResearchSummaryEl.innerHTML =
+            '<div class="panel-title">No planet selected</div>';
+        }
+        return;
+      }
+
+      /* Surface / overview */
+      planetNameEl.textContent = planet.name;
+
+      var typeText = planet.type + " • " + getOwnerLabel(planet.owner);
+      if (planet.owner !== "player") {
+        typeText += " • Def Lv " + (planet.defenseLevel || 1);
+      }
+      planetTypeEl.textContent = typeText;
+
+      planetPopulationEl.textContent = formatPopulation(planet.population);
+
+      // Show resources/buildings only if owned or scanned
+      var showDetails = planet.owner === "player" || planet.scanned;
+      if (planet.owner !== "player") {
+        planetHeaderSubtitleEl.textContent =
+          "This world is not under your control. Attack it from the Galaxy view to conquer and auto-colonize.";
+        if (!showDetails) {
+          buildingsListEl.innerHTML = '<div class="hint-text">Send a recon scan to reveal resources and buildings.</div>';
+          if (planetFleetListEl) planetFleetListEl.innerHTML = '<div class="hint-text">Send a recon scan to reveal fleet info.</div>';
+          if (planetResearchSummaryEl) planetResearchSummaryEl.innerHTML = '<div class="panel-title">Scan required</div>';
+          return;
+        }
+      } else {
+        planetHeaderSubtitleEl.textContent =
+          "Managing " + planet.name + " • Buildings and fleets here are local to this planet.";
+      }
+
+      var html = "";
+      Object.keys(buildingConfigs).forEach(function (buildingId) {
+        var cfg = buildingConfigs[buildingId];
+        var state = getBuildingState(planet, buildingId);
+        var nextLevel = (state.level || 0) + 1;
+        var cost = getBuildingCost(buildingId, nextLevel);
+        var timeSeconds = getBuildingTime(buildingId, nextLevel);
+
+        var statusText;
+        var statusClass = "";
+        if (state.isUpgrading) {
+          var remaining = getRemainingSeconds(state.finishAt);
+          statusText = "Upgrading … " + remaining + "s remaining";
+          statusClass = "accent";
+        } else {
+          statusText = "Idle • Next level: +" + describeBuildingBonus(buildingId);
+        }
+
+        var disabled = planet.owner !== "player" || state.isUpgrading;
+        var disabledReason = planet.owner !== "player" ? " (not owned)" : "";
+
+        html += '<div class="building-row">';
+        html += '<div class="building-main">';
+        html += '<div class="building-name">' + cfg.displayName + '</div>';
+        html += '<div class="building-level">Level ' + (state.level || 0) + '</div>';
+        html += '</div>';
+
+        html += '<div class="building-meta">';
+        html += '<div>Cost: ' + costToString(cost) + '</div>';
+        html += '<div>Build Time: ' + timeSeconds + 's</div>';
+        html += '</div>';
+
+        html += '<button class="btn small upgrade-btn" data-building-id="' + buildingId + '"' +
+          (disabled ? " disabled" : "") +
+          '>Upgrade</button>';
+
+        html += '<div class="building-status">';
+        if (planet.owner !== "player") {
+          html += '<span class="danger">You must conquer this planet before upgrading.</span>';
+        } else {
+          html += '<span class="' + statusClass + '">' + statusText + disabledReason + '</span>';
+        }
+        html += '</div>';
+
+        html += '</div>';
+      });
+
+      buildingsListEl.innerHTML = html;
+
+      /* Local fleet section */
+      renderPlanetFleetSection(planet);
+
+      /* Local research summary */
+      renderPlanetResearchSection();
+    }
+
+    function renderPlanetFleetSection(planet) {
+      if (!planetFleetListEl) return;
+
+      if (!planet.localFleets) {
+        planet.localFleets = createEmptyFleet();
+      }
+
+      var lf = planet.localFleets;
+      var html = "";
+
+      Object.keys(shipConfigs).forEach(function (shipId) {
+        var cfg = shipConfigs[shipId];
+        var localCount = lf[shipId] || 0;
+        var totalCount = gameState.fleets[shipId] || 0;
+
+        html += '<div class="fleet-row">';
+        html += '<div class="row-main">';
+        html += '<div class="ship-name">' + cfg.displayName + '</div>';
+        html += '<div class="ship-qty">Here: ' + formatNumber(localCount) +
+          ' • Empire: ' + formatNumber(totalCount) + '</div>';
+        html += '</div>';
+
+        html += '<div class="row-secondary">';
+        if (shipId === "recon") {
+          html += 'Recon probes on this planet can explore Unknown Regions or scan enemy worlds.';
+        } else {
+          html += 'Combat ships stationed in orbit around this planet.';
+        }
+        html += '</div>';
+
+        html += '<div class="row-actions">';
+        html += '<span style="font-size:10px;color:var(--text-muted);">Build ships from this world in the Fleet view.</span>';
+        html += '</div>';
+
+        html += '</div>';
+      });
+
+      planetFleetListEl.innerHTML = html;
+    }
+
+    function renderPlanetResearchSection() {
+      if (!planetResearchSummaryEl) return;
+      var e = gameState.research.energyTech;
+      var w = gameState.research.weaponTech;
+
+      var html = '';
+      html += '<div class="panel-title">Empire Research Levels</div>';
+      html += '<div class="stat-row"><span>Energy Tech</span><strong>Lv ' + e.level + '</strong></div>';
+      html += '<div class="stat-row"><span>Weapon Tech</span><strong>Lv ' + w.level + '</strong></div>';
+
+      var running = [];
+      if (e.isResearching) {
+        running.push('Energy Tech (finishes in ' + getRemainingSeconds(e.finishAt) + 's)');
+      }
+      if (w.isResearching) {
+        running.push('Weapon Tech (finishes in ' + getRemainingSeconds(w.finishAt) + 's)');
+      }
+
+      html += '<div class="panel-note" style="margin-top:4px;">';
+      if (running.length) {
+        html += 'Active: ' + running.join(', ') + '.<br>';
+      } else {
+        html += 'No tech currently researching.<br>';
+      }
+      html += 'Research bonuses apply to every planet in your empire.</div>';
+
+      planetResearchSummaryEl.innerHTML = html;
+    }
+
+    function upgradeBuilding(buildingId) {
+      var planet = getSelectedPlanet();
+      if (!planet || planet.owner !== "player") {
+        alert("Select one of your planets before upgrading buildings.");
+        return;
+      }
+
+      var cfg = buildingConfigs[buildingId];
+      if (!cfg) return;
+
+      var state = getBuildingState(planet, buildingId);
+      if (state.isUpgrading) {
+        return;
+      }
+
+      var nextLevel = (state.level || 0) + 1;
+      var cost = getBuildingCost(buildingId, nextLevel);
+      var timeSeconds = getBuildingTime(buildingId, nextLevel);
+
+      if (!canAffordOnPlanet(cost, planet)) {
+        alert("Not enough resources on " + planet.name + " to upgrade " + cfg.displayName + ".");
+        return;
+      }
+
+      spendResourcesOnPlanet(cost, planet);
+      state.isUpgrading = true;
+      state.finishAt = Date.now() + timeSeconds * 1000;
+
+      logEvent("BUILDING", "Upgrade started: " + cfg.displayName + " to Level " + nextLevel + " on " + planet.name + ".");
+
+      renderTopBar();
+      renderPlanetView();
+      renderEmpireView();
+    }
+
+    function getBuildingState(planet, buildingId) {
+      if (!planet.buildings) {
+        planet.buildings = {};
+      }
+      if (!planet.buildings[buildingId]) {
+        planet.buildings[buildingId] = {
+          level: 0,
+          isUpgrading: false,
+          finishAt: 0
+        };
+      }
+      return planet.buildings[buildingId];
+    }
+
+    function getBuildingCost(buildingId, nextLevel) {
+      var cfg = buildingConfigs[buildingId];
+      var factor = Math.pow(cfg.costMultiplier, nextLevel - 1);
+      return {
+        metal: Math.round((cfg.baseCost.metal || 0) * factor),
+        crystal: Math.round((cfg.baseCost.crystal || 0) * factor),
+        energy: Math.round((cfg.baseCost.energy || 0) * factor)
+      };
+    }
+
+    function getBuildingTime(buildingId, nextLevel) {
+      var cfg = buildingConfigs[buildingId];
+      return Math.round(cfg.baseTime * (1 + (nextLevel - 1) * 0.5));
+    }
+
+    function describeBuildingBonus(buildingId) {
+      if (buildingId === "metalMine") {
+        return "Metal income";
+      }
+      if (buildingId === "solarPlant") {
+        return "Energy income";
+      }
+      if (buildingId === "shipyard") {
+        return "Crystal income & ship throughput";
+      }
+      if (buildingId === "defenseGrid") {
+        return "Planetary defenses (turrets)";
+      }
+      return "planet stats";
+    }
+
+    /* -------------------------------------------------------------
+       FLEET VIEW (EMPIRE)
+       ------------------------------------------------------------- */
+
+    function renderFleetView() {
+      // Save current input values before re-rendering
+      var savedValues = {};
+      if (fleetListEl) {
+        var inputs = fleetListEl.querySelectorAll('.ship-amount-input');
+        inputs.forEach(function(input) {
+          var row = input.closest('.fleet-row');
+          if (row) {
+            var btn = row.querySelector('.build-ship-btn');
+            if (btn) {
+              var shipId = btn.getAttribute('data-ship-id');
+              if (shipId && input.value) {
+                savedValues[shipId] = input.value;
+              }
+            }
+          }
+        });
+      }
+
+      var html = "";
+      var activePlanet = getSelectedPlanet();
+
+      Object.keys(shipConfigs).forEach(function (shipId) {
+        var cfg = shipConfigs[shipId];
+        var empireTotal = gameState.fleets[shipId] || 0;
+        var localCount = 0;
+        if (activePlanet && activePlanet.localFleets) {
+          localCount = activePlanet.localFleets[shipId] || 0;
+        }
+
+        html += '<div class="fleet-row">';
+        html += '<div class="row-main">';
+        html += '<div class="ship-name">' + cfg.displayName + '</div>';
+        html += '<div class="ship-qty">On this planet: ' + formatNumber(localCount) +
+          ' • Empire total: ' + formatNumber(empireTotal) + '</div>';
+        html += '</div>';
+
+        html += '<div class="row-secondary">';
+        html += 'Cost per unit: ' + costToString(cfg.cost);
+        html += '<br>ATK: ' + cfg.baseAtk + ' • SHD: ' + cfg.baseShd;
+        if (shipId === "scoutHawk") {
+          html += '<br>Scout Hawks launch from your planet to explore Unknown Regions and scan enemy planets.';
+        }
+        html += '</div>';
+
+        html += '<div class="row-actions">';
+        var savedValue = savedValues[shipId] || '1';
+        html += '<input class="ship-amount-input" type="number" min="1" value="' + savedValue + '">';
+        html += '<button class="btn small build-ship-btn" data-ship-id="' + shipId + '">Build</button>';
+        html += '</div>';
+
+        html += '</div>';
+      });
+
+      fleetListEl.innerHTML = html;
+
+      fleetHintEl.textContent =
+        "Current attack multiplier: " + gameState.attackMultiplier.toFixed(2) +
+        "x. Combat ships and recon are tracked per planet; only the active planet's fleet is used when you attack or explore.";
+    }
+
+    function buildShips(shipId, amount) {
+      var cfg = shipConfigs[shipId];
+      if (!cfg) return;
+      if (amount <= 0) return;
+
+      var planet = getSelectedPlanet();
+      if (!planet || planet.owner !== "player") {
+        alert("Select one of your planets (that you own) before building ships.");
+        return;
+      }
+
+      var totalCost = {
+        metal: (cfg.cost.metal || 0) * amount,
+        crystal: (cfg.cost.crystal || 0) * amount,
+        energy: (cfg.cost.energy || 0) * amount
+      };
+
+      if (!canAffordOnPlanet(totalCost, planet)) {
+        alert("Not enough resources on " + planet.name + " to build " + amount + " " + cfg.displayName + "(s).");
+        return;
+      }
+
+      spendResourcesOnPlanet(totalCost, planet);
+
+      if (!planet.localFleets) {
+        planet.localFleets = createEmptyFleet();
+      }
+
+      planet.localFleets[shipId] = (planet.localFleets[shipId] || 0) + amount;
+      recomputeEmpireFleetTotals();
+
+      logEvent("BUILD", "Built " + amount + " " + cfg.displayName + "(s) on " + planet.name + ".");
+
+      renderTopBar();
+      renderFleetView();
+      renderPlanetView();
+      renderEmpireView();
+      renderDefensePanel();
+      updateUnknownRegionUI();
+    }
+
+    /* -------------------------------------------------------------
+       RESEARCH VIEW
+       ------------------------------------------------------------- */
+
+    function renderResearchView() {
+      var html = "";
+
+      Object.keys(researchConfigs).forEach(function (techId) {
+        var cfg = researchConfigs[techId];
+        var state = gameState.research[techId];
+
+        var nextLevel = (state.level || 0) + 1;
+        var cost = getResearchCost(techId, nextLevel);
+        var timeSeconds = getResearchTime(techId, nextLevel);
+
+        var statusText;
+        if (state.isResearching) {
+          var remaining = getRemainingSeconds(state.finishAt);
+          statusText = "Researching Level " + nextLevel + " • " + remaining + "s remaining";
+        } else if (state.level > 0) {
+          statusText = "Completed Level " + state.level + ". Ready for Level " + nextLevel + ".";
+        } else {
+          statusText = "Not started. Begin Level 1 research to unlock this tech.";
+        }
+
+        html += '<div class="research-row">';
+        html += '<div>';
+        html += '<div class="tech-name">' + cfg.displayName + '</div>';
+        html += '<div class="tech-level">Current Level ' + state.level + '</div>';
+        html += '</div>';
+
+        html += '<div class="tech-meta">';
+        html += '<div>Next Cost (paid by active planet): ' + costToString(cost) + '</div>';
+        html += '<div>Research Time: ' + timeSeconds + 's</div>';
+        html += '</div>';
+
+        html += '<button class="btn small research-btn" data-tech-id="' + techId + '"' +
+          (state.isResearching ? " disabled" : "") +
+          '>Research</button>';
+
+        html += '<div class="tech-status">';
+        html += '<span>' + cfg.description + '<br>' + statusText + '</span>';
+        html += '</div>';
+
+        html += '</div>';
+      });
+
+      researchListEl.innerHTML = html;
+    }
+
+    function startResearch(techId) {
+      var cfg = researchConfigs[techId];
+      if (!cfg) return;
+      var state = gameState.research[techId];
+
+      if (state.isResearching) return;
+
+      var planet = getSelectedPlanet();
+      if (!planet || planet.owner !== "player") {
+        alert("Select one of your planets first. Research cost is paid from that planet's resources.");
+        return;
+      }
+
+      var nextLevel = (state.level || 0) + 1;
+      var cost = getResearchCost(techId, nextLevel);
+      var timeSeconds = getResearchTime(techId, nextLevel);
+
+      if (!canAffordOnPlanet(cost, planet)) {
+        alert("Not enough resources on " + planet.name + " to start " + cfg.displayName + " Level " + nextLevel + ".");
+        return;
+      }
+
+      spendResourcesOnPlanet(cost, planet);
+      state.isResearching = true;
+      state.finishAt = Date.now() + timeSeconds * 1000;
+
+      logEvent("RESEARCH", "Started " + cfg.displayName + " Level " + nextLevel + " (paid by " + planet.name + ").");
+
+      renderTopBar();
+      renderResearchView();
+      renderPlanetView();
+      renderEmpireView();
+    }
+
+    function getResearchCost(techId, nextLevel) {
+      var cfg = researchConfigs[techId];
+      var factor = 1 + (nextLevel - 1) * 0.7;
+      return {
+        metal: Math.round((cfg.baseCost.metal || 0) * factor),
+        crystal: Math.round((cfg.baseCost.crystal || 0) * factor),
+        energy: Math.round((cfg.baseCost.energy || 0) * factor)
+      };
+    }
+
+    function getResearchTime(techId, nextLevel) {
+      var cfg = researchConfigs[techId];
+      return Math.round(cfg.baseTime * (1 + (nextLevel - 1) * 0.5));
+    }
+
+    /* -------------------------------------------------------------
+       EMPIRE SUMMARY
+       ------------------------------------------------------------- */
+
+    function renderEmpireView() {
+      var totalPlanets = countOwnedPlanets();
+      var totalShips = countTotalShips();
+      var totalResources = sumEmpireResources();
+
+      empirePlanetsEl.textContent = totalPlanets;
+      empireFleetsEl.textContent = formatNumber(Math.floor(totalShips));
+      empireResourcesEl.textContent = formatNumber(Math.floor(totalResources));
+      empireAttackMultEl.textContent = "x" + gameState.attackMultiplier.toFixed(2);
+
+      allianceNameEl.textContent = "NOVA COLLECTIVE";
+    }
+
+    function countOwnedPlanets() {
+      var sum = 0;
+      gameState.systems.forEach(function (s) {
+        s.planets.forEach(function (p) {
+          if (p.owner === "player") sum++;
+        });
+      });
+      return sum;
+    }
+
+    function sumEmpireResources() {
+      var total = 0;
+      gameState.systems.forEach(function (s) {
+        s.planets.forEach(function (p) {
+          if (p.owner === "player" && p.resources) {
+            total += p.resources.metal + p.resources.crystal + p.resources.energy;
+          }
+        });
+      });
+      return total;
+    }
+
+    function countTotalShips() {
+      var t = 0;
+      Object.keys(gameState.fleets).forEach(function (k) {
+        t += gameState.fleets[k] || 0;
+      });
+      return t;
+    }
+
+    function countCombatShipsEmpire() {
+      var t = 0;
+      Object.keys(gameState.fleets).forEach(function (k) {
+        if (k === "recon") return;
+        t += gameState.fleets[k] || 0;
+      });
+      return t;
+    }
+
+    /* -------------------------------------------------------------
+       ATTACK / SCAN
+       ------------------------------------------------------------- */
+
+    function attackPlanet(planetId) {
+      var found = findPlanetById(planetId);
+      if (!found.planet) return;
+      var planet = found.planet;
+
+      if (planet.owner === "player") {
+        alert("You already control " + planet.name + ".");
+        return;
+      }
+
+      // Get the last selected planet that you own to use as attack origin
+      var origin = null;
+      
+      // First check if gameState.selectedPlanetId is a player-owned planet
+      if (gameState.selectedPlanetId) {
+        var selectedFound = findPlanetById(gameState.selectedPlanetId);
+        if (selectedFound.planet && selectedFound.planet.owner === "player") {
+          origin = selectedFound.planet;
+        }
+      }
+      
+      // If no valid origin yet, find any owned planet
+      if (!origin) {
+        gameState.systems.forEach(function (sys) {
+          sys.planets.forEach(function (p) {
+            if (!origin && p.owner === "player") {
+              origin = p;
+            }
+          });
+        });
+      }
+      
+      if (!origin) {
+        alert("You need to own at least one planet to launch an attack.");
+        return;
+      }
+
+      if (!origin.localFleets) {
+        origin.localFleets = createEmptyFleet();
+      }
+
+      var lf = origin.localFleets;
+      var totalCombat = 0;
+      Object.keys(shipConfigs).forEach(function(key) {
+        totalCombat += (lf[key] || 0);
+      });
+
+      if (totalCombat <= 0) {
+        alert("There are no combat ships on " + origin.name + " to send into battle.\n\nTip: Switch to the planet you want to attack from in the Planet view or side panel.");
+        return;
+      }
+
+      // Show the attack fleet modal
+      showAttackFleetModal(planet, origin);
+    }
+
+    function showAttackFleetModal(targetPlanet, originPlanet) {
+      var modal = document.getElementById('attackFleetModal');
+      var content = document.getElementById('attackFleetContent');
+      if (!modal || !content) return;
+
+      var lf = originPlanet.localFleets;
+      var defPower = getDefensePower(targetPlanet);
+      var scanned = targetPlanet.scanned;
+
+      var html = '';
+      html += '<div style="margin-bottom: 12px; padding: 8px; background: rgba(57, 210, 255, 0.1); border-radius: 6px; border: 1px solid rgba(57, 210, 255, 0.3);">';
+      html += '<div style="font-size: 13px; font-weight: 600; color: #39d2ff; margin-bottom: 4px;">Target: ' + targetPlanet.name + '</div>';
+      html += '<div style="font-size: 10px; color: #8a98c2;">Def Lvl: ' + (targetPlanet.defenseLevel || 1);
+      if (scanned) {
+        html += ' • Power: ' + defPower.toFixed(0) + '</div>';
+      } else {
+        html += '</div><div style="font-size: 10px; color: #ff4d6a;">⚠️ Not scanned</div>';
+      }
+      html += '</div>';
+
+      html += '<div style="margin-bottom: 12px; padding: 10px; background: rgba(61, 255, 156, 0.1); border-radius: 6px; border: 1px solid rgba(61, 255, 156, 0.3);">';
+      html += '<div style="font-size: 13px; font-weight: 600; color: #3dff9c; margin-bottom: 6px;">From: ' + originPlanet.name + '</div>';
+      html += '<div style="font-size: 11px; color: #8a98c2; margin-bottom: 8px;">Select ships:</div>';
+
+      // Fleet selection inputs - use shipConfigs
+      var shipTypes = Object.keys(shipConfigs).map(function(key) {
+        var cfg = shipConfigs[key];
+        return { id: cfg.id, name: cfg.displayName, atk: cfg.baseAtk, shd: cfg.baseShd };
+      });
+
+      // Add scrollable container for ship list
+      html += '<div style="max-height: 250px; overflow-y: auto; margin-bottom: 8px;">';
+      
+      shipTypes.forEach(function(ship) {
+        var available = lf[ship.id] || 0;
+        if (available > 0) { // Only show ships that are available
+          html += '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; padding: 4px 6px; background: rgba(0, 0, 0, 0.3); border-radius: 4px;">';
+          html += '<div style="flex: 1; min-width: 0;">';
+          html += '<div style="font-size: 11px; font-weight: 500; color: #e5f2ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + ship.name + '</div>';
+          html += '<div style="font-size: 10px; color: #8a98c2;">Max: ' + available + '</div>';
+          html += '</div>';
+          html += '<input type="number" id="attack_' + ship.id + '" min="0" max="' + available + '" value="' + available + '" style="width: 70px; padding: 4px; text-align: center; background: rgba(7, 11, 26, 0.97); border: 1px solid rgba(71, 101, 160, 0.9); border-radius: 4px; color: #e5f2ff; font-size: 12px;" oninput="this.value = Math.max(0, Math.min(' + available + ', parseInt(this.value) || 0))" onchange="updateAttackPower()">';
+          html += '</div>';
+        }
+      });
+
+      html += '</div>'; // Close scrollable container
+      html += '</div>';
+
+      html += '<div id="attackPowerDisplay" style="padding: 8px; background: rgba(255, 179, 71, 0.1); border-radius: 6px; border: 1px solid rgba(255, 179, 71, 0.3); text-align: center;">';
+      html += '<div style="font-size: 11px; color: #8a98c2; margin-bottom: 2px;">Attack Power</div>';
+      html += '<div id="attackPowerValue" style="font-size: 16px; font-weight: 700; color: #ffb347;">0</div>';
+      html += '<div id="attackOutcome" style="font-size: 10px; margin-top: 4px;"></div>';
+      html += '</div>';
+
+      content.innerHTML = html;
+
+      // Store target info for the confirm button
+      modal.dataset.targetPlanetId = targetPlanet.id;
+      modal.dataset.originPlanetId = originPlanet.id;
+
+      modal.classList.add('active');
+      updateAttackPower();
+
+      // Bind modal buttons
+      var confirmBtn = document.getElementById('confirmAttackBtn');
+      var cancelBtn = document.getElementById('cancelAttackBtn');
+
+      if (confirmBtn) {
+        confirmBtn.onclick = function() {
+          executeAttack();
+        };
+      }
+
+      if (cancelBtn) {
+        cancelBtn.onclick = function() {
+          modal.classList.remove('active');
+        };
+      }
+    }
+
+    function adjustAttackFleet(shipType, delta) {
+      var input = document.getElementById('attack_' + shipType);
+      if (!input) return;
+      var current = parseInt(input.value) || 0;
+      var max = parseInt(input.max) || 0;
+      var newVal = Math.max(0, Math.min(max, current + delta));
+      input.value = newVal;
+      updateAttackPower();
+    }
+    
+    // Expose to window for inline onclick handlers
+    window.adjustAttackFleet = adjustAttackFleet;
+
+    function updateAttackPower() {
+      // Calculate attack power based on all ship types
+      var totalAtk = 0;
+      var totalShips = 0;
+      
+      Object.keys(shipConfigs).forEach(function(shipId) {
+        var input = document.getElementById('attack_' + shipId);
+        if (input) {
+          var count = parseInt(input.value) || 0;
+          totalShips += count;
+          totalAtk += count * shipConfigs[shipId].baseAtk;
+        }
+      });
+
+      var attackPower = totalAtk * gameState.attackMultiplier;
+
+      var powerDisplay = document.getElementById('attackPowerValue');
+      var outcomeDisplay = document.getElementById('attackOutcome');
+
+      if (powerDisplay) {
+        powerDisplay.textContent = attackPower.toFixed(0);
+      }
+
+      // Get target planet info
+      var modal = document.getElementById('attackFleetModal');
+      if (modal && modal.dataset.targetPlanetId) {
+        var found = findPlanetById(modal.dataset.targetPlanetId);
+        if (found.planet) {
+          if (outcomeDisplay) {
+            if (totalShips === 0) {
+              outcomeDisplay.innerHTML = '<span style="color: #ff4d6a;">⚠️ No ships selected</span>';
+            } else if (!found.planet.scanned) {
+              outcomeDisplay.innerHTML = '<span style="color: #ffb347;">⚠️ Planet not scanned - outcome unknown</span>';
+            } else {
+              var defPower = getDefensePower(found.planet);
+              if (attackPower >= defPower) {
+                outcomeDisplay.innerHTML = '<span style="color: #3dff9c;">✓ Sufficient power - Victory likely!</span>';
+              } else {
+                var deficit = defPower - attackPower;
+                outcomeDisplay.innerHTML = '<span style="color: #ff4d6a;">⚠️ Insufficient power (need ' + deficit.toFixed(0) + ' more)</span>';
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Expose to window for inline onchange handler
+    window.updateAttackPower = updateAttackPower;
+
+    function executeAttack() {
+      var modal = document.getElementById('attackFleetModal');
+      if (!modal) return;
+
+      var targetId = modal.dataset.targetPlanetId;
+      var originId = modal.dataset.originPlanetId;
+
+      var found = findPlanetById(targetId);
+      var originFound = findPlanetById(originId);
+
+      if (!found.planet || !originFound.planet) return;
+
+      var planet = found.planet;
+      var origin = originFound.planet;
+
+      // Get selected fleet counts for all ship types
+      var sentShips = {};
+      var committedTotal = 0;
+      var totalAtk = 0;
+
+      Object.keys(shipConfigs).forEach(function(shipId) {
+        var input = document.getElementById('attack_' + shipId);
+        if (input) {
+          var count = parseInt(input.value) || 0;
+          sentShips[shipId] = count;
+          committedTotal += count;
+          totalAtk += count * shipConfigs[shipId].baseAtk;
+        } else {
+          sentShips[shipId] = 0;
+        }
+      });
+
+      modal.classList.remove('active');
+
+      var defPower = getDefensePower(planet);
+      var defShipsBefore = getDefenseShips(planet);
+
+      if (committedTotal <= 0) {
+        alert("You don't have enough ships on " + origin.name + " to mount an attack.");
+        return;
+      }
+
+      var playerPower = totalAtk * gameState.attackMultiplier;
+
+      if (playerPower >= defPower) {
+        // SUCCESS: destroy defenses, auto-colonize
+        planet.owner = "player";
+        planet.defenseLevel = 0;
+        planet.defenseFleet = 0;
+        planet.defenseShips = createEmptyFleet();
+        planet.staticDefense = planet.staticDefense || { turrets: 0, shieldBatteries: 0, hangarBays: 0 };
+        planet.staticDefense.turrets = Math.max(planet.staticDefense.turrets || 0, 1);
+        planet.scanned = true;
+
+        if (!planet.resources) {
+          planet.resources = { metal: 200, crystal: 120, energy: 80 };
+        }
+        if (!planet.resourceRates) {
+          planet.resourceRates = { metal: 0, crystal: 0, energy: 0 };
+        }
+        if (!planet.localFleets) {
+          planet.localFleets = createEmptyFleet();
+        }
+
+        if (planet.population < 1000000) {
+          planet.population += 1000000;
+        }
+
+        if (!planet.buildings) planet.buildings = {};
+        if (!planet.buildings.metalMine) {
+          planet.buildings.metalMine = { level: 1, isUpgrading: false, finishAt: 0 };
+        } else if (planet.buildings.metalMine.level === 0) {
+          planet.buildings.metalMine.level = 1;
+        }
+
+        // ask whether fleet returns or remains
+        var stay = window.confirm(
+          "Victory at " + planet.name + "!\n" +
+          "You have conquered and auto-colonized the planet.\n\n" +
+          "OK = Station the attacking fleet here as local defense.\n" +
+          "Cancel = Send the fleet back to " + origin.name + "."
+        );
+
+        if (stay) {
+          // move ships from origin to new planet
+          Object.keys(shipConfigs).forEach(function (type) {
+            var move = sentShips[type] || 0;
+            if (move > 0) {
+              var avail = origin.localFleets[type] || 0;
+              var actualMove = Math.min(avail, move);
+              origin.localFleets[type] = Math.max(0, avail - actualMove);
+              planet.localFleets[type] = (planet.localFleets[type] || 0) + actualMove;
+            }
+          });
+        }
+        // if stay === false, ships "return" to origin, so counts don't change
+
+        selectPlanet(planet.id);
+
+        logEvent(
+          "BATTLE",
+          "Victory at " + planet.name + " (from " + origin.name + "). " +
+          "Enemy defenses destroyed (" + defenseShipsToStringPretty(defShipsBefore) + "). " +
+          (stay ? "Attacking fleet now defends the new colony." : "Attacking fleet returned home.")
+        );
+
+        recomputeEmpireFleetTotals();
+      } else {
+        // FAILURE: lose committed ships, enemy survives
+        var newFleetPower = Math.max(0, defPower - playerPower);
+        var scale = newFleetPower / defPower;
+        scale = isFinite(scale) ? scale : 1;
+
+        var ds = getDefenseShips(planet);
+        var newDefenseTotal = 0;
+        Object.keys(shipConfigs).forEach(function(key) {
+          ds[key] = Math.max(0, Math.round((ds[key] || 0) * scale));
+          newDefenseTotal += ds[key];
+        });
+        planet.defenseShips = ds;
+        planet.defenseFleet = newDefenseTotal;
+
+        // remove committed ships from origin (all lost)
+        Object.keys(shipConfigs).forEach(function (type) {
+          var loss = sentShips[type] || 0;
+          if (loss > 0) {
+            origin.localFleets[type] = Math.max(0, (origin.localFleets[type] || 0) - loss);
+          }
+        });
+
+        logEvent(
+          "BATTLE",
+          "Attack on " + planet.name + " from " + origin.name + " failed. " +
+          "Lost " + committedTotal + " combat ship(s). Enemy defense grid now " +
+          defenseShipsToStringPretty(getDefenseShips(planet)) + "."
+        );
+
+        alert(
+          "Your attack on " + planet.name + " failed.\n" +
+          "Enemy defenses were too strong.\n" +
+          "You lost " + committedTotal + " combat ship(s) in the assault."
+        );
+
+        recomputeEmpireFleetTotals();
+      }
+
+      renderGalaxyMap();
+      renderSidePanel();
+      renderTopBar();
+      renderDefensePanel();
+      if (currentView === "planet") renderPlanetView();
+      if (currentView === "fleet") renderFleetView();
+      if (currentView === "empire") renderEmpireView();
+      updateUnknownRegionUI();
+    }
+
+    function scanPlanet(planetId) {
+      var found = findPlanetById(planetId);
+      if (!found.planet) return;
+      var planet = found.planet;
+
+      var origin = getAnyOwnedPlanet();
+      if (!origin) {
+        alert("You need an owned planet to launch a recon scan.");
+        return;
+      }
+      if (!origin.localFleets) {
+        origin.localFleets = createEmptyFleet();
+      }
+
+      var reconCount = origin.localFleets.scoutHawk || 0;
+      if (reconCount <= 0) {
+        alert("You need at least 1 Scout Hawk (Recon) on " + origin.name + " to scan this planet.");
+        return;
+      }
+
+      origin.localFleets.scoutHawk = reconCount - 1;
+      recomputeEmpireFleetTotals();
+
+      var defLevel = planet.defenseLevel || 1;
+      var ds = getDefenseShips(planet);
+      var defPower = getDefensePower(planet);
+
+      planet.scanned = true;
+
+      var msg =
+        "Recon report for " + planet.name + ":\n" +
+        "Defense Level " + defLevel + "\n" +
+        "Defense layout: " + defenseShipsToStringPretty(ds) + "\n" +
+        "Estimated combat power: " + Math.round(defPower);
+
+      alert(msg);
+
+      logEvent(
+        "SCAN",
+        "Scanned " + planet.name + ": Def Lv " + defLevel +
+        ", Turrets " + defenseShipsToStringPretty(ds) + "."
+      );
+
+      if (currentView === "fleet") {
+        renderFleetView();
+      }
+      renderGalaxyMap();
+      renderEmpireView();
+      renderTopBar();
+      renderDefensePanel();
+      updateUnknownRegionUI();
+    }
+
+    /* -------------------------------------------------------------
+       RESOURCE / TIMER SIMULATION
+       ------------------------------------------------------------- */
+
+    function gameTick(dt) {
+      gameState.time += dt;
+
+      updateBuildingProgress();
+      updateResearchProgress();
+      updateNeutralDevelopment(dt);
+      computeProductionRates();
+      simulateResourceIncome(dt);
+      computeAttackMultiplier();
+      recomputeEmpireFleetTotals();
+
+      renderTopBar();
+      renderQuickStats();
+
+      if (currentView === "planet") {
+        renderPlanetView();
+      } else if (currentView === "fleet") {
+        // Don't re-render fleet view if user is typing in an input
+        var activeElement = document.activeElement;
+        var isTypingInFleet = activeElement && activeElement.tagName === 'INPUT' && 
+                              activeElement.classList.contains('ship-amount-input');
+        if (!isTypingInFleet) {
+          renderFleetView();
+        }
+      } else if (currentView === "research") {
+        renderResearchView();
+      } else if (currentView === "empire") {
+        renderEmpireView();
+      }
+      renderSidePanel();
+      renderDefensePanel();
+      updateUnknownRegionUI();
+    }
+
+    function simulateResourceIncome(dt) {
+      gameState.systems.forEach(function (system) {
+        system.planets.forEach(function (planet) {
+          if (planet.owner === "player" && planet.resources && planet.resourceRates) {
+            planet.resources.metal += planet.resourceRates.metal * dt;
+            planet.resources.crystal += planet.resourceRates.crystal * dt;
+            planet.resources.energy += planet.resourceRates.energy * dt;
+          }
+        });
+      });
+    }
+
+    function updateBuildingProgress() {
+      var now = Date.now();
+      gameState.systems.forEach(function (system) {
+        system.planets.forEach(function (planet) {
+          if (!planet.buildings) return;
+          Object.keys(planet.buildings).forEach(function (buildingId) {
+            var b = planet.buildings[buildingId];
+            if (b.isUpgrading && b.finishAt && now >= b.finishAt) {
+              b.isUpgrading = false;
+              b.finishAt = 0;
+              b.level = (b.level || 0) + 1;
+              logEvent("BUILDING", "Upgrade completed: " + buildingConfigs[buildingId].displayName +
+                " is now Level " + b.level + " on " + planet.name + ".");
+            }
+          });
+        });
+      });
+    }
+
+    function updateResearchProgress() {
+      var now = Date.now();
+      Object.keys(gameState.research).forEach(function (techId) {
+        var state = gameState.research[techId];
+        if (state.isResearching && state.finishAt && now >= state.finishAt) {
+          state.isResearching = false;
+          state.finishAt = 0;
+          state.level = (state.level || 0) + 1;
+          logEvent("RESEARCH", researchConfigs[techId].displayName + " reached Level " + state.level + ".");
+        }
+      });
+    }
+
+    // Unclaimed / enemy planets auto-develop over time (slower)
+    function updateNeutralDevelopment(dt) {
+      var GROW_INTERVAL = 180; // slower enemy auto-development (seconds)
+      gameState.systems.forEach(function (system) {
+        system.planets.forEach(function (planet) {
+          if (planet.owner === "player") return;
+          planet.devTimer = (planet.devTimer || 0) + dt;
+          if (planet.devTimer >= GROW_INTERVAL) {
+            planet.devTimer -= GROW_INTERVAL;
+
+            // small random growth in ships
+            var ds = getDefenseShips(planet);
+            var shipKeys = Object.keys(shipConfigs);
+            shipKeys.forEach(function(key) {
+              if (Math.random() < 0.3) {
+                ds[key] = (ds[key] || 0) + 1;
+              }
+            });
+            planet.defenseShips = ds;
+            planet.defenseFleet = getDefenseTotalShips(planet);
+
+            // small random growth in static defenses (turrets etc.)
+            ensureStaticDefense(planet);
+            if (Math.random() < 0.4) planet.staticDefense.turrets += 1;
+            if (Math.random() < 0.25) planet.staticDefense.shieldBatteries += 1;
+            if (Math.random() < 0.15) planet.staticDefense.hangarBays += 1;
+          }
+        });
+      });
+    }
+
+    function computeProductionRates() {
+      var totalRates = { metal: 0, crystal: 0, energy: 0 };
+      var base = gameState.baseRates;
+
+      var energyLevel = gameState.research.energyTech.level || 0;
+      var metalMultiplier = 1 + energyLevel * 0.10;
+      var crystalMultiplier = 1 + energyLevel * 0.05;
+      var energyMultiplier = 1 + energyLevel * 0.15;
+
+      gameState.systems.forEach(function (system) {
+        system.planets.forEach(function (planet) {
+          var r = { metal: 0, crystal: 0, energy: 0 };
+
+          if (planet.owner === "player") {
+            r.metal = base.metal;
+            r.crystal = base.crystal;
+            r.energy = base.energy;
+
+            if (planet.buildings) {
+              var b = planet.buildings;
+              if (b.metalMine && b.metalMine.level) {
+                r.metal += b.metalMine.level * (buildingConfigs.metalMine.productionBonusPerLevel.metal || 0);
+              }
+              if (b.solarPlant && b.solarPlant.level) {
+                r.energy += b.solarPlant.level * (buildingConfigs.solarPlant.productionBonusPerLevel.energy || 0);
+              }
+              if (b.shipyard && b.shipyard.level) {
+                r.crystal += b.shipyard.level * (buildingConfigs.shipyard.productionBonusPerLevel.crystal || 0);
+              }
+            }
+
+            r.metal *= metalMultiplier;
+            r.crystal *= crystalMultiplier;
+            r.energy *= energyMultiplier;
+          }
+
+          planet.resourceRates = r;
+          totalRates.metal += r.metal;
+          totalRates.crystal += r.crystal;
+          totalRates.energy += r.energy;
+        });
+      });
+
+      gameState.empireRates = totalRates;
+    }
+
+    function computeAttackMultiplier() {
+      var weaponLevel = gameState.research.weaponTech.level || 0;
+      gameState.attackMultiplier = 1 + weaponLevel * 0.05;
+    }
+
+    function recomputeEmpireFleetTotals() {
+      var totals = createEmptyFleet();
+      gameState.systems.forEach(function (sys) {
+        sys.planets.forEach(function (p) {
+          if (p.owner === "player" && p.localFleets) {
+            Object.keys(shipConfigs).forEach(function(key) {
+              totals[key] += p.localFleets[key] || 0;
+            });
+          }
+        });
+      });
+      gameState.fleets = totals;
+    }
+
+    /* -------------------------------------------------------------
+       TOP BAR / QUICK STATS / DEFENSE PANEL / INTEL LOG
+       ------------------------------------------------------------- */
+
+    function renderTopBar() {
+      var planet = getSelectedPlanet();
+
+      // Only show resources if owned or scanned
+      if (planet && planet.resources && (planet.owner === "player" || planet.scanned)) {
+        metalEl.textContent = formatNumber(planet.resources.metal);
+        crystalEl.textContent = formatNumber(planet.resources.crystal);
+        energyEl.textContent = formatNumber(planet.resources.energy);
+      } else {
+        metalEl.textContent = "?";
+        crystalEl.textContent = "?";
+        energyEl.textContent = "?";
+      }
+
+      if (planet) {
+        planetLabelEl.textContent = planet.name + " — " + getOwnerLabel(planet.owner);
+      } else {
+        planetLabelEl.textContent = "No Planet Selected";
+      }
+
+      timeEl.textContent = formatGameTime(gameState.time);
+    }
+
+    function renderQuickStats() {
+      rateMetalEl.textContent = gameState.empireRates.metal.toFixed(1);
+      rateCrystalEl.textContent = gameState.empireRates.crystal.toFixed(1);
+      rateEnergyEl.textContent = gameState.empireRates.energy.toFixed(1);
+      attackMultiplierQuickEl.textContent = "x" + gameState.attackMultiplier.toFixed(2);
+    }
+
+    function renderDefensePanel() {
+      if (!defensePanelEl || !defensePanelBodyEl) return;
+      var planet = getSelectedPlanet();
+      if (!planet) {
+        defensePanelBodyEl.textContent = "No planet selected.";
+        return;
+      }
+
+      ensureStaticDefense(planet);
+      var d = planet.staticDefense || { turrets: 0, shieldBatteries: 0, hangarBays: 0 };
+
+      if (planet.owner === "player") {
+        // Calculate combat power from local fleets
+        var combatPower = 0;
+        if (planet.localFleets) {
+          Object.keys(shipConfigs).forEach(function(key) {
+            var count = planet.localFleets[key] || 0;
+            combatPower += count * shipConfigs[key].baseAtk;
+          });
+        }
+        combatPower *= gameState.attackMultiplier;
+        
+        defensePanelBodyEl.innerHTML =
+          "Active world: <span class=\"warm\">" + planet.name + "</span><br>" +
+          "Combat Power: <span class=\"success\">" + combatPower.toFixed(0) + "</span><br>" +
+          "Turrets: " + d.turrets + "<br>" +
+          "Shield Arrays: " + d.shieldBatteries + "<br>" +
+          "Hangar Bays: " + d.hangarBays;
+      } else if (planet.scanned) {
+        var defPower = getDefensePower(planet);
+        defensePanelBodyEl.innerHTML =
+          "Target: <span class=\"accent\">" + planet.name + "</span><br>" +
+          "Defense Power: <span class=\"danger\">" + defPower.toFixed(0) + "</span><br>" +
+          "Turrets: " + d.turrets + "<br>" +
+          "Shield Arrays: " + d.shieldBatteries + "<br>" +
+          "Hangar Bays: " + d.hangarBays;
+      } else {
+        defensePanelBodyEl.innerHTML =
+          "Target: <span class=\"accent\">" + planet.name + "</span><br>" +
+          "Defenses unknown. Scan to reveal turrets and installations.";
+      }
+    }
+
+    function logEvent(type, message) {
+      gameState.log = gameState.log || [];
+      gameState.log.unshift({
+        time: gameState.time,
+        type: type,
+        message: message
+      });
+      if (gameState.log.length > 20) {
+        gameState.log.pop();
+      }
+      renderIntelLog();
+    }
+
+    function renderIntelLog() {
+      // Update message indicator
+      var indicator = document.getElementById('messageIndicator');
+      if (indicator) {
+        if (gameState.log && gameState.log.length > 0) {
+          indicator.style.display = 'block';
+        } else {
+          indicator.style.display = 'none';
+        }
+      }
+    }
+
+    function initMessageStorage() {
+      var messageBtn = document.getElementById('intelMessageBtn');
+      var modal = document.getElementById('messageStorageModal');
+
+      if (messageBtn) {
+        messageBtn.addEventListener('click', function() {
+          toggleMessageStorage();
+        });
+      }
+
+      if (modal) {
+        modal.addEventListener('click', function(evt) {
+          if (evt.target === modal) {
+            modal.style.display = 'none';
+          }
+        });
+      }
+    }
+
+    function toggleMessageStorage() {
+      var modal = document.getElementById('messageStorageModal');
+      if (!modal) return;
+
+      if (modal.style.display === 'block') {
+        modal.style.display = 'none';
+      } else {
+        openMessageStorage();
+      }
+    }
+
+    function openMessageStorage() {
+      var modal = document.getElementById('messageStorageModal');
+      var content = document.getElementById('messageStorageContent');
+      
+      if (!modal || !content) return;
+
+      var html = '';
+      
+      if (!gameState.log || gameState.log.length === 0) {
+        html += '<div style="padding: 20px; text-align: center; color: var(--text-muted);">No messages yet. Events will appear here.</div>';
+      } else {
+        gameState.log.forEach(function(entry, idx) {
+          html += '<div style="padding: 12px; margin-bottom: 8px; background: rgba(0, 0, 0, 0.3); border-left: 3px solid var(--accent); border-radius: 6px;">';
+          html += '<div style="display: flex; justify-content: space-between; margin-bottom: 6px;">';
+          html += '<span style="font-size: 11px; color: var(--text-muted);">' + formatGameTime(entry.time) + '</span>';
+          html += '<span style="font-size: 10px; padding: 2px 6px; background: var(--accent-soft); border-radius: 4px; color: var(--accent);">' + entry.type + '</span>';
+          html += '</div>';
+          html += '<div style="font-size: 13px; color: var(--text-main);">' + entry.message + '</div>';
+          html += '</div>';
+        });
+      }
+
+      content.innerHTML = html;
+      modal.style.display = 'block';
+      
+      // Hide the indicator when messages are opened
+      var indicator = document.getElementById('messageIndicator');
+      if (indicator) {
+        indicator.style.display = 'none';
+      }
+    }
+
+    function initialRenderAll() {
+      recomputeEmpireFleetTotals();
+      renderTopBar();
+      renderSidePanel();
+      renderQuickStats();
+      renderPlanetView();
+      renderFleetView();
+      renderResearchView();
+      renderEmpireView();
+      renderDefensePanel();
+      renderIntelLog();
+      updateUnknownRegionUI();
+    }
+
+    /* -------------------------------------------------------------
+       RESOURCE HELPERS (PER-PLANET)
+       ------------------------------------------------------------- */
+
+    function canAffordOnPlanet(cost, planet) {
+      if (!planet || !planet.resources) return false;
+      if (!cost) return true;
+      if (cost.metal && planet.resources.metal < cost.metal) return false;
+      if (cost.crystal && planet.resources.crystal < cost.crystal) return false;
+      if (cost.energy && planet.resources.energy < cost.energy) return false;
+      return true;
+    }
+
+    function spendResourcesOnPlanet(cost, planet) {
+      if (!planet || !planet.resources || !cost) return;
+      if (cost.metal) planet.resources.metal -= cost.metal;
+      if (cost.crystal) planet.resources.crystal -= cost.crystal;
+      if (cost.energy) planet.resources.energy -= cost.energy;
+    }
+
+    function getAnyOwnedPlanet() {
+      var selected = getSelectedPlanet();
+      if (selected && selected.owner === "player") return selected;
+      var result = null;
+      gameState.systems.forEach(function (sys) {
+        sys.planets.forEach(function (p) {
+          if (!result && p.owner === "player") {
+            result = p;
+          }
+        });
+      });
+      return result;
+    }
+
+    function costToString(cost) {
+      var parts = [];
+      if (cost.metal) parts.push("M " + formatNumber(cost.metal));
+      if (cost.crystal) parts.push("C " + formatNumber(cost.crystal));
+      if (cost.energy) parts.push("E " + formatNumber(cost.energy));
+      return parts.join(" · ");
+    }
+
+    function getRemainingSeconds(finishAt) {
+      if (!finishAt) return 0;
+      var diff = Math.max(0, Math.round((finishAt - Date.now()) / 1000));
+      return diff;
+    }
+
+    /* -------------------------------------------------------------
+       DEFENSE FLEET / STRUCTURES HELPERS (PER-PLANET)
+       ------------------------------------------------------------- */
+
+    function ensureStaticDefense(planet) {
+      if (!planet.staticDefense) {
+        var level = planet.defenseLevel || 1;
+        planet.staticDefense = {
+          turrets: 1 + Math.floor(Math.random() * (level * 2 + 3)),
+          shieldBatteries: Math.floor(Math.random() * (level + 2)),
+          hangarBays: Math.floor(Math.random() * (level + 1))
+        };
+      }
+    }
+
+    function getDefenseShips(planet) {
+      if (!planet.defenseShips) {
+        // Distribute defense fleet across all ship types
+        var total = planet.defenseFleet || 10;
+        var fleet = createEmptyFleet();
+        var shipKeys = Object.keys(shipConfigs);
+        var perType = Math.floor(total / shipKeys.length);
+        var remainder = total % shipKeys.length;
+        
+        shipKeys.forEach(function(key, idx) {
+          fleet[key] = perType + (idx < remainder ? 1 : 0);
+        });
+        
+        planet.defenseShips = fleet;
+      }
+      return planet.defenseShips;
+    }
+
+    function getDefenseTotalShips(planet) {
+      var ds = getDefenseShips(planet);
+      var total = 0;
+      Object.keys(shipConfigs).forEach(function(key) {
+        total += (ds[key] || 0);
+      });
+      return total;
+    }
+
+    function getDefensePower(planet) {
+      var ds = getDefenseShips(planet);
+      var defLevel = planet.defenseLevel || 1;
+      ensureStaticDefense(planet);
+      var sd = planet.staticDefense || {};
+      
+      // Calculate defense power from ships using their ATK + SHD
+      var shipPower = 0;
+      Object.keys(shipConfigs).forEach(function(key) {
+        var count = ds[key] || 0;
+        var cfg = shipConfigs[key];
+        shipPower += count * (cfg.baseAtk + cfg.baseShd);
+      });
+      
+      var raw = shipPower +
+        (sd.turrets || 0) * 2 +
+        (sd.shieldBatteries || 0) * 3 +
+        (sd.hangarBays || 0) * 2;
+      if (raw <= 0) raw = defLevel * 8;
+
+      // Defense Grid building boosts defenses on owned planets
+      if (planet.owner === "player" && planet.buildings && planet.buildings.defenseGrid) {
+        var dgLevel = planet.buildings.defenseGrid.level || 0;
+        raw *= (1 + dgLevel * 0.10); // +10% defense per level
+      }
+
+      return raw * defLevel;
+    }
+
+    function defenseShipsToString(planet) {
+      var ds = getDefenseShips(planet);
+      var parts = [];
+      Object.keys(shipConfigs).forEach(function(key) {
+        var count = ds[key] || 0;
+        if (count > 0) {
+          var name = shipConfigs[key].displayName.split(' ')[0]; // Get first word
+          parts.push(count + " " + name);
+        }
+      });
+      return parts.length ? parts.join(", ") : "No defense grid";
+    }
+
+    function defenseShipsToStringPretty(ds) {
+      var parts = [];
+      Object.keys(shipConfigs).forEach(function(key) {
+        var count = ds[key] || 0;
+        if (count > 0) {
+          var name = shipConfigs[key].displayName;
+          parts.push(count + " " + name);
+        }
+      });
+      return parts.length ? parts.join(", ") : "No defense grid";
+    }
+
+    /* -------------------------------------------------------------
+       LOOKUP HELPERS
+       ------------------------------------------------------------- */
+
+    function findPlanetById(planetId) {
+      var result = { system: null, planet: null };
+      if (!planetId) return result;
+      gameState.systems.forEach(function (sys) {
+        sys.planets.forEach(function (p) {
+          if (p.id === planetId) {
+            result.system = sys;
+            result.planet = p;
+          }
+        });
+      });
+      return result;
+    }
+
+    function getSelectedSystem() {
+      var id = gameState.selectedSystemId;
+      if (id) {
+        for (var i = 0; i < gameState.systems.length; i++) {
+          if (gameState.systems[i].id === id) return gameState.systems[i];
+        }
+      }
+      if (gameState.selectedPlanetId) {
+        var found = findPlanetById(gameState.selectedPlanetId);
+        if (found.system) return found.system;
+      }
+      return gameState.systems[0] || null;
+    }
+
+    function getSelectedPlanet() {
+      if (gameState.selectedPlanetId) {
+        var found = findPlanetById(gameState.selectedPlanetId);
+        if (found.planet) return found.planet;
+      }
+      var sys = getSelectedSystem();
+      return sys && sys.planets[0] ? sys.planets[0] : null;
+    }
+
+    /* -------------------------------------------------------------
+       FORMAT HELPERS
+       ------------------------------------------------------------- */
+
+    function formatNumber(value) {
+      var v = Math.floor(value);
+      return v.toLocaleString("en-US");
+    }
+
+    function formatPopulation(pop) {
+      if (pop >= 1e9) {
+        return (pop / 1e9).toFixed(1) + " B";
+      } else if (pop >= 1e6) {
+        return (pop / 1e6).toFixed(1) + " M";
+      } else if (pop >= 1e3) {
+        return (pop / 1e3).toFixed(1) + " K";
+      }
+      return pop.toString();
+    }
+
+    function formatGameTime(seconds) {
+      var totalSeconds = Math.floor(seconds);
+      var days = Math.floor(totalSeconds / 86400);
+      var withinDay = totalSeconds % 86400;
+      var hours = Math.floor(withinDay / 3600);
+      var minutes = Math.floor((withinDay % 3600) / 60);
+
+      var cycle = days + 1;
+      var cycleStr = String(cycle);
+      if (cycleStr.length < 3) {
+        cycleStr = ("00" + cycleStr).slice(-3);
+      }
+
+      var hStr = ("0" + hours).slice(-2);
+      var mStr = ("0" + minutes).slice(-2);
+      return "Cycle " + cycleStr + " • " + hStr + ":" + mStr;
+    }
+
+    function getOwnerLabel(owner) {
+      if (owner === "player") return "You";
+      if (owner === "enemy") return "Enemy Empire";
+      return "Unclaimed";
+    }
+  })();
+</script>
+<!-- Background music: place your audio files in an `Audio/` folder next to this HTML file -->
+<audio id="bg-menu" src="C:\Users\patap\Desktop\Space game\Audio\C418 - Aria Math (Minecraft Volume Beta).mp3" loop preload="auto"></audio>
+<audio id="bg-gameplay" src="C:\Users\patap\Desktop\Space game\Audio\Paul Kass - Aquarius 1986 (Dark Sample).mp3" loop preload="auto"></audio>
+
+<script>
+  (function () {
+    var menuAudio = document.getElementById('bg-menu');
+    var gameplayAudio = document.getElementById('bg-gameplay');
+    var unlockOverlay = document.getElementById('audioUnlock');
+    var unlockBtn = document.getElementById('audioUnlockBtn');
+    var toggleBtn = document.getElementById('audioToggleBtn');
+
+    function isMutedFromStorage() { return localStorage.getItem('musicMuted') === '1'; }
+    function setMutedToStorage(v) { localStorage.setItem('musicMuted', v ? '1' : '0'); }
+    function setUnlockedToStorage(v) { localStorage.setItem('audioUnlocked', v ? '1' : '0'); }
+
+    var audioState = {
+      muted: isMutedFromStorage(),
+      unlocked: localStorage.getItem('audioUnlocked') === '1'
+    };
+
+    function updateToggleUI() {
+      if (!toggleBtn) return;
+      toggleBtn.textContent = audioState.muted ? '🔇' : '🔊';
+    }
+
+    function showUnlockOverlay() {
+      if (!unlockOverlay) return;
+      unlockOverlay.classList.remove('hidden');
+    }
+
+    function hideUnlockOverlay() {
+      if (!unlockOverlay) return;
+      unlockOverlay.classList.add('hidden');
+    }
+
+    function tryPlay(audioEl) {
+      if (!audioEl) return Promise.resolve();
+      if (audioState.muted) { audioEl.pause(); return Promise.resolve(); }
+      try {
+        var p = audioEl.play();
+        if (!p) return Promise.resolve();
+        return p.catch(function (err) {
+          // Audio blocked by browser - show unlock overlay
+          audioState.unlocked = false;
+          setUnlockedToStorage(false);
+          showUnlockOverlay();
+        });
+      } catch (e) {
+        // Audio error - show unlock overlay
+        showUnlockOverlay();
+        return Promise.resolve();
+      }
+    }
+
+    window.audioManager = {
+      playMenu: function () {
+        if (!menuAudio) return;
+        if (audioState.muted) { menuAudio.pause(); return; }
+        if (!audioState.unlocked) { showUnlockOverlay(); return; }
+        // Only play if not already playing
+        menuAudio.currentTime = 0;
+        if (menuAudio.paused) {
+          menuAudio.volume = 0.7;
+          tryPlay(menuAudio);
+        }
+      },
+      stopAll: function () { try { if (menuAudio) menuAudio.pause(); if (gameplayAudio) gameplayAudio.pause(); } catch (e) { } },
+      toggleMute: function () {
+        audioState.muted = !audioState.muted;
+        setMutedToStorage(audioState.muted);
+        if (audioState.muted) this.stopAll();
+        else {
+          try { if (!document.getElementById('mainMenu').classList.contains('hidden')) this.playMenu(); } catch (e) {}
+        }
+        updateToggleUI();
+      },
+      unlockAndPlay: function () {
+        audioState.unlocked = true;
+        setUnlockedToStorage(true);
+        hideUnlockOverlay();
+        updateToggleUI();
+        if (audioState.muted) return;
+        this.playMenu();
+      }
+    };
+
+    // Wire up UI controls
+    if (unlockBtn) unlockBtn.addEventListener('click', function () { window.audioManager.unlockAndPlay(); });
+    if (toggleBtn) toggleBtn.addEventListener('click', function () { window.audioManager.toggleMute(); });
+
+    // Initialize UI state
+    updateToggleUI();
+
+    // Attempt to auto-start menu music if unlocked and not muted
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function () {
+        if (audioState.muted) return;
+        if (audioState.unlocked) {
+          try { window.audioManager.playMenu(); } catch (e) { console.warn(e); }
+        } else {
+          try { window.audioManager.playMenu(); } catch (e) { showUnlockOverlay(); }
+        }
+      }, 300);
+    });
+  })();
+</script>
+
+</body>
+</html>
